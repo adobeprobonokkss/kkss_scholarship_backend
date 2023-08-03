@@ -1,0 +1,11 @@
+# API END POINT
+
+- Login
+  |
+  |
+- ALL_USER
+    - GET     v1/role 
+                    - USER
+                          - POST v1/newapplication 
+                          - GET v1/status?appid=${appid} 
+                          - PUT v1/updateapplication

@@ -1,7 +1,8 @@
+const config = require("config");
+const app = require("./dist/app").default;
 
-const app = require('./dist/app').default;
+const port = config.get("port");
 
-const port = 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
