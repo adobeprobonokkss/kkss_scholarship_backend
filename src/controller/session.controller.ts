@@ -1,5 +1,6 @@
 import { CookieOptions, Request, Response } from "express";
 import { getGoogleOAuthToken } from "./../service/user.service";
+import { logger } from "./../utils/logger";
 import { signjwt } from "./../utils/jwt.util";
 import config from "config";
 import jwt from "jsonwebtoken";
@@ -14,7 +15,7 @@ const errorLoginUrl = "http://localhost:9000/login/error#";
 const oAuthError = `${config.get("origin")}/oauth/error`;
 
 const accessTokenCookieOptions: CookieOptions = {
-  maxAge: 90000,
+  maxAge: 30000,
   httpOnly: true,
   domain: "localhost",
   path: "/",
@@ -28,48 +29,43 @@ const refershTokenCookieOptions: CookieOptions = {
 };
 
 export async function googleOAuthHandler(req: Request, res: Response) {
-  res.header("Acess-Control-Allow-Origin", "http://localhost:9000");
+  res.header("Acess-Control-Allow-Origin", config.get("FRONT_END_URL"));
   res.header("Referrer-Policy", "no-referrer-when-downgrade");
 
   try {
     const code = req.query.code as string;
-    //get the user tokens
     const { id_token, access_token } = await getGoogleOAuthToken({ code });
-    // console.log(id_token, access_token);
 
     const userInfo: any = jwt.decode(id_token); // pradeepkmr838 -implementation needs to change here call 44/14
-    // console.log({ userInfo });
+    logger.info("Getting user from google oauth - ", userInfo);
     if (!userInfo.email_verified) {
-      return res.status(403).send("Your enamil is not verified....");
+      logger.info("Email is not veerified for user..", userInfo.email);
+      return res.status(403).send("Your enamil is not verified...."); //handle error for UI
     }
-    //if user does not exist create new one
+
     const { name, email, picture } = userInfo;
 
-    //fetch userid from firebase data to create a session and based on that accesstoken and referesh token will be created
-
-    //temp code
     const user: any = { name, email, picture };
-    console.log(user);
+    logger.info("creating user object with this ", user);
     const app_access_token = signjwt({ ...user }, { expiresIn: config.get("accessTokenTtl") });
     const app_refresh_token = signjwt({ ...user }, { expiresIn: config.get("refreshTokenTtl") });
+
     res.cookie("accessToken", app_access_token, accessTokenCookieOptions);
     res.cookie("refreshToken", app_refresh_token, refershTokenCookieOptions);
-    console.log("user is Loggd in");
-    // return res.json({ app_access_token, app_refresh_token });
-    // return res.redirect(`http://${config.get("origin")}/scholarship-form`);
     res.set("x-access-token", app_access_token);
 
-    //get the user
-    const isUserRegisterInApp = await getUserByEmailId(user.name);
-    console.log(isUserRegisterInApp);
-    if (isUserRegisterInApp.length == 0) {
-      const isCreateNewUser: any = await createNewUser(user);
+    const isUserRegisterInApp = await getUserByEmailId(user.email);
+    if (isUserRegisterInApp) {
+      logger.info("User already registerd....", isUserRegisterInApp);
       return res.redirect(succesLoginUrl);
-    } else if (isUserRegisterInApp.length == 1) {
-      console.log("User already registerd....", isUserRegisterInApp[0]);
+    } else {
+      logger.info("User not registred with application", isUserRegisterInApp);
+      console.log("User not registred with application", isUserRegisterInApp);
+      const isCreateNewUser: any = await createNewUser(user);
       return res.redirect(succesLoginUrl);
     }
   } catch (error: any) {
+    logger.error("Getting error while in googleOauthHandler", error);
     return res.send(oAuthError);
   }
 }
@@ -88,9 +84,7 @@ export async function getGoogleOAuthUrl(req: Request, res: Response) {
     prompt: "consent",
     scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"].join(" ")
   };
-  console.log(options);
-
   const qs = new URLSearchParams(options);
-  console.log(qs.toString());
+  logger.debug("getGoogleOAuthUrl retrung code ", qs.toString());
   return res.send(`${rootUrl}?${qs.toString()}`);
 }

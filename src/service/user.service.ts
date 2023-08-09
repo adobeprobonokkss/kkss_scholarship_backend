@@ -20,7 +20,7 @@ export async function getGoogleOAuthToken({ code }: { code: string }): Promise<G
     redirect_uri: config.get("GOOGLE_REDIRECT_URL"),
     grant_type: "authorization_code"
   };
-  console.log(values);
+  // console.log(values);
 
   try {
     const res = await axios.post<GoogleTokentResults>(url, QueryString.stringify(values), {
@@ -28,7 +28,7 @@ export async function getGoogleOAuthToken({ code }: { code: string }): Promise<G
         "Content-Type": "application/x-www-form-urlencoded"
       }
     });
-    console.log(res);
+    // console.log(res);
     if (!(res.data.access_token && res.data.id_token)) {
       throw new Error("something happen while authoorizing" + res.status);
     }
