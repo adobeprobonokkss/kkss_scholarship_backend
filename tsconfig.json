@@ -1,0 +1,19 @@
+{
+  // "compilerOptions": {
+  //   "esModuleInterop": true,
+  //   "target": "ES2019",
+  //   "module": "commonjs",
+  //   "outDir": "dist",
+  //   "rootDir": "src",
+  //   "strict": true
+  // },
+  "compilerOptions": {
+    "baseUrl": "src",
+    "module": "NodeNext",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "sourceMap": true,
+    "noImplicitAny": true
+  },
+  "include": ["src/**/*"]
+}
