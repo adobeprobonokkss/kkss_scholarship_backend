@@ -6,6 +6,7 @@ export function authHandler(req: any, res: Response) {
 }
 
 export async function getAllUsersHandler(req: any, res: Response) {
+  if (!req.isUserAuthorized) return res.status(401).send("NOT_AUTHORIZED");
   const users = await getAllUsers("filter");
   return res.status(200).json(users);
 }

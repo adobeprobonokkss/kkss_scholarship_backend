@@ -3,7 +3,20 @@ import { verifyJwt } from "./../utils/jwt.util";
 import { logger } from "./../utils/logger";
 import config from "config";
 
-export function requiredUser(req: any, res: Response, next: NextFunction) {
+export async function requiredUser(req: any, res: Response, next: NextFunction) {
+  // const developmentFlag = await config.get("developmentFlag");
+  // if (developmentFlag) {
+  //   console.log("Running in development mode");
+  //   // req.user = {
+  //   //   valid: true,
+  //   //   expired: false,
+  //   //   decoded: "some decoded payload here "
+  //   // };
+  //   next();
+  //   console.log("after next method...");
+  //   return;
+  // }
+
   try {
     const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
@@ -15,8 +28,8 @@ export function requiredUser(req: any, res: Response, next: NextFunction) {
     } else if (!userSessionInfo.valid) {
       logger.info("JWT token is not valid......");
       req.user = { valid: false, message: "JWT token is not valid,plese login again" };
+      return res.status(401).json({ msg: "NOT_AUTHUNTICATED" });
     } else req.user = userSessionInfo;
-    console.log(req.user);
     next();
   } catch (error) {
     console.log(error);
