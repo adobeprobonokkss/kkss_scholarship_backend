@@ -1,12 +1,12 @@
 import { Express, Request, Response } from "express";
-import { googleOAuthHandler, getGoogleOAuthUrl } from "./controller/session.controller";
+import { googleOAuthHandler, getGoogleOAuthUrl, createSessionHandler } from "./controller/session.controller";
 import { authHandler, getAllUsersHandler } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 
 import { getUserByEmailId, createNewUser } from "./service/firebase.service";
 
 function routes(app: Express) {
-  app.get("/healthcheck", (req: Request, res: Response) => res.status(200).json({ 1: "tester" }));
+  app.get("/healthcheck", (req: Request, res: Response) => res.status(200).json({ 1: "changed 2nd time" }));
 
   app.get("/api/sessions/oauth/google", googleOAuthHandler);
 
@@ -15,8 +15,11 @@ function routes(app: Express) {
   app.get("/api/v1/auth/user", requiredUser, authHandler);
 
   app.get("/api/v1/protected/get/users", getAllUsersHandler);
+  app.get("/api/v1/create/session", createSessionHandler);
 
   // app.post("/api/v1/submitApplication")
 }
 
 export default routes;
+
+

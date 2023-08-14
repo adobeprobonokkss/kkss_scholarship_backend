@@ -2,11 +2,16 @@
   "name": "kkss_scholarship_backend",
   "version": "1.0.0",
   "description": "Backend",
-  "main": "index.js",
+  "main": "dist/src/app.js",
   "scripts": {
     "start": "nodemon",
     "test": "test",
-    "build": "tsc"
+    "clean": "rm -r dist",
+    "cpsetup1": "cp package.json  dist/package.json",
+    "cpsetup2": "cp .firebaserc   dist/.firebaserc",
+    "cpsetup3": "cp 'firebase.json' dist/firebase.json",
+    "build": "yarn run clean  && tsc && yarn run cpsetup1 && yarn run cpsetup2 && yarn run cpsetup3",
+    "deploy": "yarn run build && firebase deploy --only functions:api "
   },
   "repository": {
     "type": "git",
@@ -32,6 +37,8 @@
     "express": "^4.18.2",
     "firebase": "^10.1.0",
     "firebase-admin": "^11.10.1",
+    "firebase-functions": "^4.4.1",
+    "firebase-tools": "^12.4.7",
     "jsonwebtoken": "^9.0.1",
     "lodash": "^4.17.21",
     "ts-node": "^10.9.1",
@@ -47,5 +54,8 @@
     "@types/lodash": "^4.14.196",
     "@types/winston": "^2.4.4",
     "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": "16"
   }
 }

@@ -1,6 +1,8 @@
 import { Response, Request, NextFunction } from "express";
 import { verifyJwt } from "./../utils/jwt.util";
 import { logger } from "./../utils/logger";
+import config from "config";
+
 export function requiredUser(req: any, res: Response, next: NextFunction) {
   try {
     const accessToken = req.cookies.accessToken;
@@ -19,6 +21,6 @@ export function requiredUser(req: any, res: Response, next: NextFunction) {
   } catch (error) {
     console.log(error);
     res.clearCookie("accessToken");
-    return res.redirect("http://localhost:9000");
+    return res.redirect(config.get("FRONT_END_URL"));
   }
 }

@@ -1,8 +1,8 @@
 import { CookieOptions, Request, Response } from "express";
 import { getGoogleOAuthToken } from "./../service/user.service";
 import { logger } from "./../utils/logger";
-import { signjwt } from "./../utils/jwt.util";
-import config from "config";
+import { signjwt, verifyJwt } from "./../utils/jwt.util";
+import config, { util } from "config";
 import jwt from "jsonwebtoken";
 import { getUserByEmailId, createNewUser } from "./../service/firebase.service";
 
@@ -10,17 +10,16 @@ const GOOGLE_CLIENT_ID = config.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = config.get("GOOGLE_CLIENT_SECRET");
 const GOOGLE_REDIRECT_URL = config.get("GOOGLE_REDIRECT_URL");
 
-const succesLoginUrl = "http://localhost:9000/login/success#";
-const errorLoginUrl = "http://localhost:9000/login/error#";
-const oAuthError = `${config.get("origin")}/oauth/error`;
+const succesLoginUrl = `${config.get("FRONT_END_URL")}/login/success#`;
+const errorLoginUrl = `${config.get("FRONT_END_URL")}/login/error#`;
+const oAuthError = `${config.get("FRONT_END_URL")}/oauth/error`;
 
+console.log(GOOGLE_REDIRECT_URL);
 const accessTokenCookieOptions: CookieOptions = {
-  maxAge: 30000,
+  maxAge: 300000,
   httpOnly: true,
-  domain: "localhost",
-  path: "/",
-  sameSite: "lax",
-  secure: false
+  sameSite: "none",
+  secure: true
 };
 
 const refershTokenCookieOptions: CookieOptions = {
@@ -29,8 +28,8 @@ const refershTokenCookieOptions: CookieOptions = {
 };
 
 export async function googleOAuthHandler(req: Request, res: Response) {
-  res.header("Acess-Control-Allow-Origin", config.get("FRONT_END_URL"));
-  res.header("Referrer-Policy", "no-referrer-when-downgrade");
+  res.header("Access-Control-Allow-Origin", config.get("FRONT_END_URL"));
+  // res.header("Referrer-Policy", "no-referrer-when-downgrade");
 
   try {
     const code = req.query.code as string;
@@ -57,10 +56,9 @@ export async function googleOAuthHandler(req: Request, res: Response) {
     const isUserRegisterInApp = await getUserByEmailId(user.email);
     if (isUserRegisterInApp) {
       logger.info("User already registerd....", isUserRegisterInApp);
-      return res.redirect(succesLoginUrl);
+      return res.redirect(`${succesLoginUrl}?token=${access_token}`);
     } else {
       logger.info("User not registred with application", isUserRegisterInApp);
-      console.log("User not registred with application", isUserRegisterInApp);
       const isCreateNewUser: any = await createNewUser(user);
       return res.redirect(succesLoginUrl);
     }
@@ -71,7 +69,21 @@ export async function googleOAuthHandler(req: Request, res: Response) {
 }
 
 export async function createSessionHandler(req: Request, res: Response) {
-  // const session=
+  const receivedToken: any = req.query.token;
+  // res.header("Access-Control-Allow-Origin", config.get("FRONT_END_URL"));
+  res.setHeader("Access-Control-Allow-Origin", config.get("FRONT_END_URL"));
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  // Include additional headers if needed
+  res.setHeader("Access-Control-Expose-Headers", "X-Custom-Header");
+  logger.info(`CreateSessionHandler Token ${receivedToken}`);
+  if (receivedToken) {
+    // const decodedInfo = verifyJwt(receivedToken);
+    res.cookie("accessToken", receivedToken, accessTokenCookieOptions);
+    logger.info("set the token in.......");
+    res.status(200).json({ message: "Session Created SuccessFully" });
+  } else {
+    res.status(400).json({ error: "Session Not Created...." });
+  }
 }
 
 export async function getGoogleOAuthUrl(req: Request, res: Response) {

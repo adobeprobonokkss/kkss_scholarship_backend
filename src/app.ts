@@ -5,12 +5,13 @@ import cors from "cors";
 import config from "config";
 import { logger } from "./utils/logger";
 import routes from "./routes";
+const functions = require("firebase-functions");
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 // app.use(cors({ origin: "localhost:9000", credentials: true }));
-app.use(cors({ origin: "http://localhost:9000", credentials: true }));
+app.use(cors({ origin: config.get("FRONT_END_URL"), credentials: true }));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -19,4 +20,10 @@ routes(app);
 
 logger.info("app is listening");
 
-export default app;
+const port = 1337;
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+exports.api = functions.https.onRequest(app);
