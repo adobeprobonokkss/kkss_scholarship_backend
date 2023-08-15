@@ -25,3 +25,8 @@
   - yarn run start - will start server locally
     - Make sure for this you are chagning redirection URL in config and goolge console oauth as well and also chang the fronENd Url part
   -
+
+#Nvm for node 16
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"

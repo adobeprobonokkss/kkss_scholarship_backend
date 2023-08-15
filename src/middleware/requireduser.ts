@@ -28,7 +28,7 @@ export async function requiredUser(req: any, res: Response, next: NextFunction) 
     } else if (!userSessionInfo.valid) {
       logger.info("JWT token is not valid......");
       req.user = { valid: false, message: "JWT token is not valid,plese login again" };
-      return res.status(401).json({ msg: "NOT_AUTHUNTICATED" });
+      return res.status(401).json({ msg: "USER_NOT_AUTHUNTICATED" });
     } else req.user = userSessionInfo;
     next();
   } catch (error) {

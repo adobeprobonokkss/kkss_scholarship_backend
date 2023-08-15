@@ -14,7 +14,6 @@ const succesLoginUrl = `${config.get("FRONT_END_URL")}/login/success#`;
 const errorLoginUrl = `${config.get("FRONT_END_URL")}/login/error#`;
 const oAuthError = `${config.get("FRONT_END_URL")}/oauth/error`;
 
-console.log(GOOGLE_REDIRECT_URL);
 const accessTokenCookieOptions: CookieOptions = {
   maxAge: 300000,
   httpOnly: true,
@@ -35,27 +34,32 @@ export async function googleOAuthHandler(req: Request, res: Response) {
     const code = req.query.code as string;
     const { id_token, access_token } = await getGoogleOAuthToken({ code });
 
-    const userInfo: any = jwt.decode(id_token); // pradeepkmr838 -implementation needs to change here call 44/14
-    logger.info("Getting user from google oauth - ", userInfo);
+    const userInfo: any = jwt.decode(id_token);
+    logger.info("Getting User Info From Google ", userInfo);
     if (!userInfo.email_verified) {
       logger.info("Email is not veerified for user..", userInfo.email);
       return res.status(403).send("Your enamil is not verified...."); //handle error for UI
     }
 
     const { name, email, picture } = userInfo;
-
-    const user: any = { name, email, picture };
-    logger.info("creating user object with this ", user);
-    const app_access_token = signjwt({ ...user }, { expiresIn: config.get("accessTokenTtl") });
-    const app_refresh_token = signjwt({ ...user }, { expiresIn: config.get("refreshTokenTtl") });
-
+    const defaultRole = "USER";
+    const user: any = { name, email, picture, role: defaultRole };
+    logger.info("Created user object with userDetails - ", user);
+    logger.info("creating access token and refresh token for session control");
+    const accessTokenTtl: string = config.get("accessTokenTtl");
+    const refereshTokenTtl: string = config.get("refreshTokenTtl");
+    const app_access_token = signjwt({ ...user }, { expiresIn: accessTokenTtl });
+    const app_refresh_token = signjwt({ ...user }, { expiresIn: refereshTokenTtl });
+    logger.info("setting accessToken and refreshToken in headers");
     res.cookie("accessToken", app_access_token, accessTokenCookieOptions);
     res.cookie("refreshToken", app_refresh_token, refershTokenCookieOptions);
     res.set("x-access-token", app_access_token);
+    logger.info("setting x-access-token.... ");
 
     const isUserRegisterInApp = await getUserByEmailId(user.email);
     if (isUserRegisterInApp) {
-      logger.info("User already registerd....", isUserRegisterInApp);
+      logger.info("User already registerd in application", isUserRegisterInApp);
+      logger.info("Redirecting to User Dashboard....");
       return res.redirect(`${succesLoginUrl}?token=${access_token}`);
     } else {
       logger.info("User not registred with application", isUserRegisterInApp);

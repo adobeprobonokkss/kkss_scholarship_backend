@@ -19,10 +19,10 @@ export async function getUserByEmailId(emailId: string) {
     const _query = query(collection(db, "user"), where("email", "==", emailId));
     const usersSnapshot = await getDocs(_query);
     const usersList = usersSnapshot.docs.map(doc => doc.data());
-    logger.error("getting user list", usersList.length);
+    logger.info(`Getting User List length for user ${emailId} and it should always be 1`, usersList.length);
     return usersList[0];
   } catch (error) {
-    logger.error("Error listing collections: ", error);
+    logger.error(`Encounterd error while fetching email id ${emailId} from user Database`, error);
     return null;
   }
 }

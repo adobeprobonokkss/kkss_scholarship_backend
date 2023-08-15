@@ -13,7 +13,7 @@ function routes(app: Express) {
 
   app.get("/api/v1/login/google", getGoogleOAuthUrl);
 
-  // app.get("/api/v1/auth/user", authHandler);
+  app.get("/api/v1/auth/user", requiredUser, authHandler);
 
   // app.get("/api/v1/protected/get/users", getAllUsersHandler);
   // app.get("/api/v1/create/session", createSessionHandler);
