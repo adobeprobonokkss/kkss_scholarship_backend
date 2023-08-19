@@ -1,5 +1,5 @@
 import { Express, Request, Response } from "express";
-import { googleOAuthHandler, getGoogleOAuthUrl, createSessionHandler } from "./controller/session.controller";
+import { googleOAuthHandler, getGoogleOAuthUrl, createSessionHandler, logOut } from "./controller/session.controller";
 import { authHandler, getAllUsersHandler } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 import { isUserAuthorized } from "./middleware/authorisationCheck";
@@ -18,6 +18,8 @@ function routes(app: Express) {
   // app.get("/api/v1/protected/get/users", getAllUsersHandler);
   // app.get("/api/v1/create/session", createSessionHandler);
   app.get("/api/v1/protected/get/users", [requiredUser, isUserAuthorized], getAllUsersHandler);
+
+  app.post("/api/v1/protected/logout", logOut);
 
   // app.post("/api/v1/submitApplication")
 }
