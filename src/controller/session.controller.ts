@@ -10,9 +10,9 @@ const GOOGLE_CLIENT_ID = config.get("GOOGLE_CLIENT_ID");
 const GOOGLE_CLIENT_SECRET = config.get("GOOGLE_CLIENT_SECRET");
 const GOOGLE_REDIRECT_URL = config.get("GOOGLE_REDIRECT_URL");
 
-const succesLoginUrl = `${config.get("FRONT_END_URL")}/login/success#`;
-const errorLoginUrl = `${config.get("FRONT_END_URL")}/login/error#`;
-const oAuthError = `${config.get("FRONT_END_URL")}/oauth/error`;
+const succesLoginUrl = `${config.get("FRONT_END_URL")}`;
+const errorLoginUrl = `${config.get("FRONT_END_URL")}/#/login/error`;
+const oAuthError = `${config.get("FRONT_END_URL")}/#/oauth/error`;
 
 const accessTokenCookieOptions: CookieOptions = {
   maxAge: 300000,
@@ -32,6 +32,9 @@ export async function googleOAuthHandler(req: Request, res: Response) {
 
   try {
     const code = req.query.code as string;
+
+    const stateReturnedFromOauth = req.query.state ?? "";
+    logger.info("State Vlaue -", req.query);
     const { id_token, access_token } = await getGoogleOAuthToken({ code });
 
     const userInfo: any = jwt.decode(id_token);
@@ -60,11 +63,11 @@ export async function googleOAuthHandler(req: Request, res: Response) {
     if (isUserRegisterInApp) {
       logger.info("User already registerd in application", isUserRegisterInApp);
       logger.info("Redirecting to User Dashboard....");
-      return res.redirect(`${succesLoginUrl}?token=${access_token}`);
+      return res.redirect(`${succesLoginUrl}?token=${stateReturnedFromOauth}`);
     } else {
       logger.info("User not registred with application", isUserRegisterInApp);
       const isCreateNewUser: any = await createNewUser(user);
-      return res.redirect(succesLoginUrl);
+      return res.redirect(`${succesLoginUrl}?token=${stateReturnedFromOauth}`);
     }
   } catch (error: any) {
     logger.error("Getting error while in googleOauthHandler", error);
@@ -91,6 +94,8 @@ export async function createSessionHandler(req: Request, res: Response) {
 }
 
 export async function getGoogleOAuthUrl(req: Request, res: Response) {
+  const receivedState: any = req.query.state;
+
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
   const options = {
     redirect_uri: GOOGLE_REDIRECT_URL as string,
@@ -102,5 +107,20 @@ export async function getGoogleOAuthUrl(req: Request, res: Response) {
   };
   const qs = new URLSearchParams(options);
   logger.debug("getGoogleOAuthUrl retrung code ", qs.toString());
-  return res.send(`${rootUrl}?${qs.toString()}`);
+  return res.send(`${rootUrl}?${qs.toString()}&state=${receivedState}`);
+}
+
+export function logOut(req: Request, res: Response) {
+  try {
+    logger.info("setting accessToken and refreshToken in headers");
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    // res.removeHeader("x-access-token");
+    logger.info("Logout Called from Backend seerver");
+    res.send(200);
+  } catch (error: any) {
+    logger.error("Getting error while in LogOut", error);
+    res.status(200);
+    return res.send("Getting Some Error");
+  }
 }

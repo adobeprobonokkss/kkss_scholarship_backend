@@ -10,7 +10,6 @@ const functions = require("firebase-functions");
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-// app.use(cors({ origin: "localhost:9000", credentials: true }));
 app.use(cors({ origin: config.get("FRONT_END_URL"), credentials: true }));
 
 app.use(express.json());

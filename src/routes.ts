@@ -3,6 +3,7 @@ import { isUserAuthorized } from "./middleware/authorisationCheck";
 import {
   googleOAuthHandler,
   getGoogleOAuthUrl,
+  logOut,
 } from "./controller/session.controller";
 import { authHandler, getAllUsersHandler } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
@@ -26,6 +27,8 @@ function routes(app: Express) {
   app.get("/api/v1/login/google", getGoogleOAuthUrl);
 
   app.get("/api/v1/auth/user", requiredUser, authHandler);
+
+  app.post("/api/v1/protected/logout", logOut);
 
   // app.get("/api/v1/protected/get/users", getAllUsersHandler);
   // app.get("/api/v1/create/session", createSessionHandler);
