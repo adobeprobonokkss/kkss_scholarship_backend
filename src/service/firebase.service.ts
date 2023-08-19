@@ -5,15 +5,18 @@ import {
   collection,
   getDocs,
   addDoc,
-  Query,
   where,
   doc,
   updateDoc,
-} from "firebase/firestore/lite";
+} from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
 
 const FIREBASE_DB_CONFIG = config.get("FIREBASE_DB_CONFIG");
+const scholarshipFormDataCache: any = {
+  time: null,
+  data: null,
+};
 
 const admin = initializeApp(FIREBASE_DB_CONFIG);
 const db = getFirestore(admin);
@@ -105,8 +108,10 @@ export async function saveScholarshipFormData(scholarshipFormData: any) {
   try {
     if (!scholarshipFormData.scholarshipID) {
       // generate scholarship ID using uuid
-      const uuid = require("uuid");
-      let scholarshipID = uuid.v4();
+      const ShortUniqueId = require("short-unique-id");
+      const uuid = new ShortUniqueId({ length: 16 });
+
+      let scholarshipID = uuid();
 
       while (await checkIfScholarshipIDExists(scholarshipID)) {
         // generate new scholarship ID if already exists
@@ -114,14 +119,15 @@ export async function saveScholarshipFormData(scholarshipFormData: any) {
       }
       await saveScholarshipID(scholarshipID);
       scholarshipFormData.scholarshipID = scholarshipID;
+      scholarshipFormData.status = "submitted";
     }
     const scholarshipFormCol = collection(db, "scholarship_forms");
     const isAdded = await addDoc(scholarshipFormCol, scholarshipFormData);
 
     return {
       scholarshipID: scholarshipFormData.scholarshipID,
-      status: "success",
-      message: "Scholarship form data saved successfully",
+      status: isAdded ? "success" : "failed",
+      message: `Scholarship form data ${isAdded ? "saved" : "not saved"}}`,
     };
   } catch (error) {
     logger.error("Error listing collections: ", error);
@@ -129,7 +135,7 @@ export async function saveScholarshipFormData(scholarshipFormData: any) {
   }
 }
 
-// get scholarship form data
+// get scholarship form data by scholarship ID
 export async function getScholarshipFormData(scholarshipID: string) {
   try {
     const _query = query(
@@ -149,5 +155,109 @@ export async function getScholarshipFormData(scholarshipID: string) {
   } catch (error) {
     logger.error("Error listing collections: ", error);
     return null;
+  }
+}
+
+// get Scholarship form data by user email ID
+export async function getScholarshipFormDataByEmailId(email: string) {
+  try {
+    const _query = query(
+      collection(db, "scholarship_forms"),
+      where("email", "==", email)
+    );
+    const scholarshipFormSnapshot = await getDocs(_query);
+    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
+      doc.data()
+    );
+    return {
+      scholarshipFormData: scholarshipFormList,
+      status: "success",
+      message: "Scholarship form data fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return null;
+  }
+}
+
+// get Scholarship form data by user Phone Number
+export async function getScholarshipFormDataByPhoneNumber(phoneNumber: string) {
+  try {
+    const _query = query(
+      collection(db, "scholarship_forms"),
+      where("phNumber", "==", phoneNumber)
+    );
+    const scholarshipFormSnapshot = await getDocs(_query);
+    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
+      doc.data()
+    );
+    return {
+      scholarshipFormData: scholarshipFormList,
+      status: "success",
+      message: "Scholarship form data fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return null;
+  }
+}
+
+// get Scholarship form data by user name
+export async function getScholarshipFormDataByName(name: string) {
+  try {
+    const _query = query(
+      collection(db, "scholarship_forms"),
+      where("name", "==", name)
+    );
+    const scholarshipFormSnapshot = await getDocs(_query);
+    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
+      doc.data()
+    );
+    return {
+      scholarshipFormData: scholarshipFormList,
+      status: "success",
+      message: "Scholarship form data fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return null;
+  }
+}
+
+// get all scholarship form data
+export async function getAllScholarshipFormData() {
+  try {
+    const timeNow = new Date().getTime();
+    console.log(timeNow, scholarshipFormDataCache.time);
+    if (
+      !scholarshipFormDataCache.time ||
+      timeNow - scholarshipFormDataCache.time > 300000
+    ) {
+      const _query = query(collection(db, "scholarship_forms"));
+      const scholarshipFormSnapshot = await getDocs(_query);
+      const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
+        doc.data()
+      );
+      scholarshipFormDataCache.time = timeNow;
+      scholarshipFormDataCache.data = scholarshipFormList;
+      return {
+        scholarshipFormData: scholarshipFormList,
+        status: "success",
+        message: "Scholarship form data fetched successfully",
+        type: "new",
+      };
+    }
+    return {
+      scholarshipFormData: scholarshipFormDataCache.data,
+      status: "success",
+      message: "Scholarship form data fetched successfully",
+      type: "cache",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: "Error fetching scholarship form data",
+    };
   }
 }

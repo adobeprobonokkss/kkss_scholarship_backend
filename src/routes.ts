@@ -8,6 +8,10 @@ import { authHandler, getAllUsersHandler } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 import {
   checkIfScholarshipIDExistsHandler,
+  getAllScholarshipFormDataHandler,
+  getScholarshipFormDataByEmailIdHandler,
+  getScholarshipFormDataByNameHandler,
+  getScholarshipFormDataByPhoneNumberHandler,
   getScholarshipFormDataHandler,
   submitApplicationHandler,
 } from "./controller/scholarshipForm.controller";
@@ -42,7 +46,31 @@ function routes(app: Express) {
   app.post("/api/v1/submitApplication", submitApplicationHandler);
 
   // get scholarship form data
-  app.get("/api/v1/getScholarshipFormData", getScholarshipFormDataHandler);
+  app.post("/api/v1/getScholarshipFormData", getScholarshipFormDataHandler);
+
+  // get scholarship form data by email ID
+  app.post(
+    "/api/v1/getScholarshipFormDataByEmailId",
+    getScholarshipFormDataByEmailIdHandler
+  );
+
+  // get scholarship form data by phone number
+  app.post(
+    "/api/v1/getScholarshipFormDataByPhoneNumber",
+    getScholarshipFormDataByPhoneNumberHandler
+  );
+
+  // get scholarship form data by name
+  app.post(
+    "/api/v1/getScholarshipFormDataByName",
+    getScholarshipFormDataByNameHandler
+  );
+
+  // get all scholarship form data
+  app.get(
+    "/api/v1/getAllScholarshipFormData",
+    getAllScholarshipFormDataHandler
+  );
 }
 
 export default routes;
