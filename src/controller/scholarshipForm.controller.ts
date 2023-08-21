@@ -3,9 +3,6 @@ import {
   checkIfScholarshipIDExists,
   getAllScholarshipFormData,
   getScholarshipFormData,
-  getScholarshipFormDataByEmailId,
-  getScholarshipFormDataByName,
-  getScholarshipFormDataByPhoneNumber,
   saveScholarshipFormData,
 } from "../service/firebase.service";
 
@@ -26,31 +23,7 @@ export async function getScholarshipFormDataHandler(
   req: Request,
   res: Response
 ) {
-  const response = await getScholarshipFormData(req.body.scholarshipID);
-  return res.status(200).json(response);
-}
-
-export async function getScholarshipFormDataByEmailIdHandler(
-  req: Request,
-  res: Response
-) {
-  const response = await getScholarshipFormDataByEmailId(req.body.email);
-  return res.status(200).json(response);
-}
-
-export async function getScholarshipFormDataByPhoneNumberHandler(
-  req: Request,
-  res: Response
-) {
-  const response = await getScholarshipFormDataByPhoneNumber(req.body.phNumber);
-  return res.status(200).json(response);
-}
-
-export async function getScholarshipFormDataByNameHandler(
-  req: Request,
-  res: Response
-) {
-  const response = await getScholarshipFormDataByName(req.body.name);
+  const response = await getScholarshipFormData(req.body);
   return res.status(200).json(response);
 }
 

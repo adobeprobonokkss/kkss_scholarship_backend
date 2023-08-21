@@ -2,6 +2,9 @@ import config, { get } from "config";
 import {
   getFirestore,
   query,
+  orderBy,
+  startAt,
+  endAt,
   collection,
   getDocs,
   addDoc,
@@ -11,12 +14,9 @@ import {
 } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
+import { ScholarshipDataRequest } from "utils/types";
 
 const FIREBASE_DB_CONFIG = config.get("FIREBASE_DB_CONFIG");
-const scholarshipFormDataCache: any = {
-  time: null,
-  data: null,
-};
 
 const admin = initializeApp(FIREBASE_DB_CONFIG);
 const db = getFirestore(admin);
@@ -27,9 +27,16 @@ interface UserSchema {
   picture: string;
 }
 
+const USERS_COLLECTION = "user";
+const SCHOLARSHIP_IDS_COLLECTION = "scholarship_IDs";
+const SCHOLARSHIP_FORMS_COLLECTION = "scholarship_forms";
+
 export async function getUserByEmailId(emailId: string) {
   try {
-    const _query = query(collection(db, "user"), where("email", "==", emailId));
+    const _query = query(
+      collection(db, USERS_COLLECTION),
+      where("email", "==", emailId)
+    );
     const usersSnapshot = await getDocs(_query);
     const usersList = usersSnapshot.docs.map((doc) => doc.data());
     logger.info(
@@ -48,7 +55,7 @@ export async function getUserByEmailId(emailId: string) {
 
 export async function createNewUser(user: UserSchema) {
   try {
-    const userCol = collection(db, "user");
+    const userCol = collection(db, USERS_COLLECTION);
     const isAdded = await addDoc(userCol, user);
     logger.info("User registerd successfully");
     logger.info(JSON.stringify(isAdded));
@@ -61,7 +68,7 @@ export async function createNewUser(user: UserSchema) {
 
 export async function getAllUsers(role: string) {
   try {
-    const snapshot = collection(db, "user");
+    const snapshot = collection(db, USERS_COLLECTION);
     const usersnapShot = await getDocs(snapshot);
     const users = await usersnapShot.docs.map((doc) => doc.data());
 
@@ -76,7 +83,7 @@ export async function getAllUsers(role: string) {
 // check if Scholarship ID exists
 export async function checkIfScholarshipIDExists(scholarshipID: string) {
   try {
-    const snapshot = collection(db, "scholarship_IDs");
+    const snapshot = collection(db, SCHOLARSHIP_IDS_COLLECTION);
     const scholarshipIDSnapshot = await getDocs(snapshot);
 
     const scholarshipIDArray = scholarshipIDSnapshot.docs[0].get("IDs");
@@ -90,12 +97,12 @@ export async function checkIfScholarshipIDExists(scholarshipID: string) {
 // save scholarship ID
 export async function saveScholarshipID(scholarshipID: string) {
   try {
-    const scholarshipIDCol = collection(db, "scholarship_IDs");
+    const scholarshipIDCol = collection(db, SCHOLARSHIP_IDS_COLLECTION);
     const scholarshipIDSnapshot = await getDocs(scholarshipIDCol);
     const scholarshipIDArray = scholarshipIDSnapshot.docs[0].get("IDs");
     scholarshipIDArray.push(scholarshipID);
 
-    updateDoc(doc(db, "scholarship_IDs", "taQQLHSS0MqqhqNHerMa"), {
+    updateDoc(doc(db, SCHOLARSHIP_IDS_COLLECTION, "taQQLHSS0MqqhqNHerMa"), {
       IDs: scholarshipIDArray,
     });
   } catch (error) {
@@ -121,7 +128,7 @@ export async function saveScholarshipFormData(scholarshipFormData: any) {
       scholarshipFormData.scholarshipID = scholarshipID;
       scholarshipFormData.status = "submitted";
     }
-    const scholarshipFormCol = collection(db, "scholarship_forms");
+    const scholarshipFormCol = collection(db, SCHOLARSHIP_FORMS_COLLECTION);
     const isAdded = await addDoc(scholarshipFormCol, scholarshipFormData);
 
     return {
@@ -135,123 +142,63 @@ export async function saveScholarshipFormData(scholarshipFormData: any) {
   }
 }
 
-// get scholarship form data by scholarship ID
-export async function getScholarshipFormData(scholarshipID: string) {
+async function getScholarshipDocuments(
+  collectionName: string,
+  field: string,
+  keyword: string,
+  year: string
+): Promise<any[]> {
+  const _query = query(
+    collection(db, collectionName),
+    where("submissionYear", "==", year),
+    orderBy(field),
+    startAt(keyword),
+    endAt(keyword + "\uf8ff")
+  );
+  const filteredObject = await getDocs(_query);
+  const filteredList = filteredObject.docs.map((doc) => doc.data());
+  return filteredList;
+}
+
+// get scholarship form data by config
+export async function getScholarshipFormData(request: ScholarshipDataRequest) {
   try {
-    const _query = query(
-      collection(db, "scholarship_forms"),
-      where("scholarshipID", "==", scholarshipID)
-    );
-    const scholarshipFormSnapshot = await getDocs(_query);
-    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
-      doc.data()
+    const scholarshipFormList = await getScholarshipDocuments(
+      SCHOLARSHIP_FORMS_COLLECTION,
+      request.field,
+      request.keyword,
+      request.year
     );
     return {
-      scholarshipID: scholarshipID,
+      field: request.field,
+      keyword: request.keyword,
+      year: request.year,
       scholarshipFormData: scholarshipFormList[0],
       status: "success",
       message: "Scholarship form data fetched successfully",
     };
   } catch (error) {
     logger.error("Error listing collections: ", error);
-    return null;
-  }
-}
-
-// get Scholarship form data by user email ID
-export async function getScholarshipFormDataByEmailId(email: string) {
-  try {
-    const _query = query(
-      collection(db, "scholarship_forms"),
-      where("email", "==", email)
-    );
-    const scholarshipFormSnapshot = await getDocs(_query);
-    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
-      doc.data()
-    );
     return {
-      scholarshipFormData: scholarshipFormList,
-      status: "success",
-      message: "Scholarship form data fetched successfully",
+      status: "failed",
+      message: "Error fetching scholarship form data",
     };
-  } catch (error) {
-    logger.error("Error listing collections: ", error);
-    return null;
-  }
-}
-
-// get Scholarship form data by user Phone Number
-export async function getScholarshipFormDataByPhoneNumber(phoneNumber: string) {
-  try {
-    const _query = query(
-      collection(db, "scholarship_forms"),
-      where("phNumber", "==", phoneNumber)
-    );
-    const scholarshipFormSnapshot = await getDocs(_query);
-    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
-      doc.data()
-    );
-    return {
-      scholarshipFormData: scholarshipFormList,
-      status: "success",
-      message: "Scholarship form data fetched successfully",
-    };
-  } catch (error) {
-    logger.error("Error listing collections: ", error);
-    return null;
-  }
-}
-
-// get Scholarship form data by user name
-export async function getScholarshipFormDataByName(name: string) {
-  try {
-    const _query = query(
-      collection(db, "scholarship_forms"),
-      where("name", "==", name)
-    );
-    const scholarshipFormSnapshot = await getDocs(_query);
-    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
-      doc.data()
-    );
-    return {
-      scholarshipFormData: scholarshipFormList,
-      status: "success",
-      message: "Scholarship form data fetched successfully",
-    };
-  } catch (error) {
-    logger.error("Error listing collections: ", error);
-    return null;
   }
 }
 
 // get all scholarship form data
 export async function getAllScholarshipFormData() {
   try {
-    const timeNow = new Date().getTime();
-    console.log(timeNow, scholarshipFormDataCache.time);
-    if (
-      !scholarshipFormDataCache.time ||
-      timeNow - scholarshipFormDataCache.time > 300000
-    ) {
-      const _query = query(collection(db, "scholarship_forms"));
-      const scholarshipFormSnapshot = await getDocs(_query);
-      const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
-        doc.data()
-      );
-      scholarshipFormDataCache.time = timeNow;
-      scholarshipFormDataCache.data = scholarshipFormList;
-      return {
-        scholarshipFormData: scholarshipFormList,
-        status: "success",
-        message: "Scholarship form data fetched successfully",
-        type: "new",
-      };
-    }
+    const _query = query(collection(db, SCHOLARSHIP_FORMS_COLLECTION));
+    const scholarshipFormSnapshot = await getDocs(_query);
+    const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
+      doc.data()
+    );
     return {
-      scholarshipFormData: scholarshipFormDataCache.data,
+      scholarshipFormData: scholarshipFormList,
       status: "success",
       message: "Scholarship form data fetched successfully",
-      type: "cache",
+      type: "new",
     };
   } catch (error) {
     logger.error("Error listing collections: ", error);
