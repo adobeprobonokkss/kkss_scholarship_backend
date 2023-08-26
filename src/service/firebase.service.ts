@@ -12,17 +12,14 @@ import {
   doc,
   updateDoc,
   QueryConstraint,
-  QueryEndAtConstraint,
-  QueryOrderByConstraint,
-  QueryStartAtConstraint,
 } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
+import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
-import { ScholarshipDataRequest } from "utils/types";
+import { ScholarshipDataRequest } from "../utils/types";
 
 const FIREBASE_DB_CONFIG = config.get("FIREBASE_DB_CONFIG");
 
-const admin = initializeApp(FIREBASE_DB_CONFIG);
+const admin = initializeApp(FIREBASE_DB_CONFIG as FirebaseOptions);
 const db = getFirestore(admin);
 
 interface UserSchema {
