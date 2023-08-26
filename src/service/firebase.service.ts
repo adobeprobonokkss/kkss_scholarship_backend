@@ -11,14 +11,15 @@ import {
   where,
   doc,
   updateDoc,
+  QueryConstraint,
 } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
+import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
-import { ScholarshipDataRequest } from "utils/types";
+import { ScholarshipDataRequest } from "../utils/types";
 
 const FIREBASE_DB_CONFIG = config.get("FIREBASE_DB_CONFIG");
 
-const admin = initializeApp(FIREBASE_DB_CONFIG);
+const admin = initializeApp(FIREBASE_DB_CONFIG as FirebaseOptions);
 const db = getFirestore(admin);
 
 interface UserSchema {
@@ -146,14 +147,27 @@ async function getScholarshipDocuments(
   collectionName: string,
   field: string,
   keyword: string,
-  year: string
+  year: string,
+  status: string
 ): Promise<any[]> {
+  const queryList: QueryConstraint[] = [];
+  const keywordSearchQuery: QueryConstraint[] = [];
+  if (year) {
+    queryList.push(where("submissionYear", "==", year));
+  }
+  if (status) {
+    queryList.push(where("status", "==", status));
+  }
+  if (field && keyword) {
+    keywordSearchQuery.push(orderBy(field)),
+      keywordSearchQuery.push(startAt(keyword)),
+      keywordSearchQuery.push(endAt(keyword + "\uf8ff"));
+  }
+
   const _query = query(
     collection(db, collectionName),
-    where("submissionYear", "==", year),
-    orderBy(field),
-    startAt(keyword),
-    endAt(keyword + "\uf8ff")
+    ...queryList,
+    ...keywordSearchQuery
   );
   const filteredObject = await getDocs(_query);
   const filteredList = filteredObject.docs.map((doc) => doc.data());
@@ -167,13 +181,15 @@ export async function getScholarshipFormData(request: ScholarshipDataRequest) {
       SCHOLARSHIP_FORMS_COLLECTION,
       request.field,
       request.keyword,
-      request.year
+      request.year,
+      request.status
     );
     return {
       field: request.field,
       keyword: request.keyword,
       year: request.year,
-      scholarshipFormData: scholarshipFormList[0],
+      scholarshipFormData: scholarshipFormList ?? [],
+      form_status: request.status,
       status: "success",
       message: "Scholarship form data fetched successfully",
     };
@@ -181,7 +197,7 @@ export async function getScholarshipFormData(request: ScholarshipDataRequest) {
     logger.error("Error listing collections: ", error);
     return {
       status: "failed",
-      message: "Error fetching scholarship form data",
+      message: error,
     };
   }
 }
@@ -198,13 +214,12 @@ export async function getAllScholarshipFormData() {
       scholarshipFormData: scholarshipFormList,
       status: "success",
       message: "Scholarship form data fetched successfully",
-      type: "new",
     };
   } catch (error) {
     logger.error("Error listing collections: ", error);
     return {
       status: "failed",
-      message: "Error fetching scholarship form data",
+      message: error,
     };
   }
 }
