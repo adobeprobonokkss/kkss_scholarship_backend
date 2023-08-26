@@ -1,7 +1,22 @@
 import { Response, Request, NextFunction } from "express";
 import { verifyJwt } from "./../utils/jwt.util";
 import { logger } from "./../utils/logger";
-export function requiredUser(req: any, res: Response, next: NextFunction) {
+import config from "config";
+
+export async function requiredUser(req: any, res: Response, next: NextFunction) {
+  // const developmentFlag = await config.get("developmentFlag");
+  // if (developmentFlag) {
+  //   console.log("Running in development mode");
+  //   // req.user = {
+  //   //   valid: true,
+  //   //   expired: false,
+  //   //   decoded: "some decoded payload here "
+  //   // };
+  //   next();
+  //   console.log("after next method...");
+  //   return;
+  // }
+
   try {
     const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
@@ -13,12 +28,12 @@ export function requiredUser(req: any, res: Response, next: NextFunction) {
     } else if (!userSessionInfo.valid) {
       logger.info("JWT token is not valid......");
       req.user = { valid: false, message: "JWT token is not valid,plese login again" };
+      return res.status(401).json({ msg: "USER_NOT_AUTHUNTICATED" });
     } else req.user = userSessionInfo;
-    console.log(req.user);
     next();
   } catch (error) {
     console.log(error);
     res.clearCookie("accessToken");
-    return res.redirect("http://localhost:9000");
+    return res.redirect(config.get("FRONT_END_URL"));
   }
 }

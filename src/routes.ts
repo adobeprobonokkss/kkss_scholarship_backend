@@ -1,12 +1,15 @@
 import { Express, Request, Response } from "express";
+import { isUserAuthorized } from "./middleware/authorisationCheck";
 import {
   googleOAuthHandler,
   getGoogleOAuthUrl,
+  logOut,
 } from "./controller/session.controller";
 import { authHandler, getAllUsersHandler } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 import {
   checkIfScholarshipIDExistsHandler,
+  getAllScholarshipFormDataHandler,
   getScholarshipFormDataHandler,
   submitApplicationHandler,
 } from "./controller/scholarshipForm.controller";
@@ -22,7 +25,15 @@ function routes(app: Express) {
 
   app.get("/api/v1/auth/user", requiredUser, authHandler);
 
-  app.get("/api/v1/protected/get/users", getAllUsersHandler);
+  app.post("/api/v1/protected/logout", logOut);
+
+  // app.get("/api/v1/protected/get/users", getAllUsersHandler);
+  // app.get("/api/v1/create/session", createSessionHandler);
+  app.get(
+    "/api/v1/protected/get/users",
+    [requiredUser, isUserAuthorized],
+    getAllUsersHandler
+  );
 
   // scholarship form routes
   // check if scholarship ID exists
@@ -35,7 +46,13 @@ function routes(app: Express) {
   app.post("/api/v1/submitApplication", submitApplicationHandler);
 
   // get scholarship form data
-  app.get("/api/v1/getScholarshipFormData", getScholarshipFormDataHandler);
+  app.post("/api/v1/getScholarshipFormData", getScholarshipFormDataHandler);
+
+  // get all scholarship form data
+  app.get(
+    "/api/v1/getAllScholarshipFormData",
+    getAllScholarshipFormDataHandler
+  );
 }
 
 export default routes;

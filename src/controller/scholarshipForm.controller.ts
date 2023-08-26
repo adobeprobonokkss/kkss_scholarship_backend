@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   checkIfScholarshipIDExists,
+  getAllScholarshipFormData,
   getScholarshipFormData,
   saveScholarshipFormData,
 } from "../service/firebase.service";
@@ -22,6 +23,15 @@ export async function getScholarshipFormDataHandler(
   req: Request,
   res: Response
 ) {
-  const response = await getScholarshipFormData(req.body.scholarshipID);
+  const response = await getScholarshipFormData(req.body);
+  return res.status(200).json(response);
+}
+
+// get all Scholarship form data
+export async function getAllScholarshipFormDataHandler(
+  req: Request,
+  res: Response
+) {
+  const response = await getAllScholarshipFormData();
   return res.status(200).json(response);
 }
