@@ -25,4 +25,6 @@ app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
 
-exports.api = functions.https.onRequest(app);
+exports.kkssCloudFunctions = functions
+  .region("asia-south1")
+  .https.onRequest(app);
