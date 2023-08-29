@@ -11,6 +11,7 @@ import {
   checkIfScholarshipIDExistsHandler,
   getAllScholarshipFormDataHandler,
   getScholarshipFormDataHandler,
+  reviewApplicationHandler,
   submitApplicationHandler,
 } from "./controller/scholarshipForm.controller";
 
@@ -37,7 +38,7 @@ function routes(app: Express) {
 
   // scholarship form routes
   // check if scholarship ID exists
-  app.get(
+  app.post(
     "/api/v1/checkIfScholarshipIDExists",
     checkIfScholarshipIDExistsHandler
   );
@@ -53,6 +54,9 @@ function routes(app: Express) {
     "/api/v1/getAllScholarshipFormData",
     getAllScholarshipFormDataHandler
   );
+
+  // review application
+  app.post("/api/v1/reviewApplication", reviewApplicationHandler);
 }
 
 export default routes;
