@@ -5,7 +5,11 @@ import {
   getGoogleOAuthUrl,
   logOut,
 } from "./controller/session.controller";
-import { authHandler, getAllUsersHandler } from "./controller/user.controller";
+import {
+  authHandler,
+  getAllUsersHandler,
+  promoteUserRole,
+} from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 import {
   checkIfScholarshipIDExistsHandler,
@@ -27,14 +31,6 @@ function routes(app: Express) {
 
   app.post("/api/v1/protected/logout", logOut);
 
-  // app.get("/api/v1/protected/get/users", getAllUsersHandler);
-  // app.get("/api/v1/create/session", createSessionHandler);
-  app.get(
-    "/api/v1/protected/get/users",
-    [requiredUser, isUserAuthorized],
-    getAllUsersHandler
-  );
-
   // scholarship form routes
   // check if scholarship ID exists
   app.get(
@@ -52,6 +48,18 @@ function routes(app: Express) {
   app.get(
     "/api/v1/getAllScholarshipFormData",
     getAllScholarshipFormDataHandler
+  );
+
+  app.post(
+    "/api/v1/protected/get/users",
+    [requiredUser, isUserAuthorized],
+    getAllUsersHandler
+  );
+
+  app.post(
+    "/api/v1/protected/promoteUserRole",
+    [requiredUser, isUserAuthorized],
+    promoteUserRole
   );
 }
 

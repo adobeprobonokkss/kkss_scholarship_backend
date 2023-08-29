@@ -25,13 +25,14 @@ interface UserSchema {
   emailId: string;
   name: string;
   picture: string;
+  role: string;
 }
 
 const USERS_COLLECTION = "user";
 const SCHOLARSHIP_IDS_COLLECTION = "scholarship_IDs";
 const SCHOLARSHIP_FORMS_COLLECTION = "scholarship_forms";
 
-export async function getUserByEmailId(emailId: string) {
+export async function getUserByEmailId(emailId: string): Promise<UserSchema> {
   try {
     const _query = query(
       collection(db, USERS_COLLECTION),
@@ -43,7 +44,7 @@ export async function getUserByEmailId(emailId: string) {
       `Getting User List length for user ${emailId} and it should always be 1`,
       usersList.length
     );
-    return usersList[0];
+    return usersList[0] as UserSchema;
   } catch (error) {
     logger.error(
       `Encounterd error while fetching email id ${emailId} from user Database`,
@@ -66,14 +67,17 @@ export async function createNewUser(user: UserSchema) {
   }
 }
 
-export async function getAllUsers(role: string) {
+export async function getAllUsers(key: string, partialText: string) {
   try {
-    const snapshot = collection(db, USERS_COLLECTION);
-    const usersnapShot = await getDocs(snapshot);
-    const users = await usersnapShot.docs.map((doc) => doc.data());
-
-    console.log(users);
-    return users;
+    const _query = query(
+      collection(db, USERS_COLLECTION),
+      orderBy(key),
+      startAt(partialText),
+      endAt(partialText + "\uf8ff")
+    );
+    const filteredObject = await getDocs(_query);
+    const filteredList = filteredObject.docs.map((doc) => doc.data());
+    return filteredList;
   } catch (error) {
     logger.error("Error listing collections: ", error);
     return null;
@@ -206,5 +210,25 @@ export async function getAllScholarshipFormData() {
       status: "failed",
       message: "Error fetching scholarship form data",
     };
+  }
+}
+
+export async function updateUserData(email: string, updatedRole: string) {
+  const usersCollection = collection(db, USERS_COLLECTION);
+  const q = query(usersCollection, where("email", "==", email));
+
+  try {
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      querySnapshot.forEach(async (queryDocSnapshot) => {
+        const docRef = doc(usersCollection, queryDocSnapshot.id);
+        await updateDoc(docRef, { email: email, role: updatedRole });
+        console.log("Document updated:", queryDocSnapshot.id);
+      });
+    } else {
+      console.log("No users found with the specified email.");
+    }
+  } catch (error) {
+    console.error("Error updating documents:", error);
   }
 }

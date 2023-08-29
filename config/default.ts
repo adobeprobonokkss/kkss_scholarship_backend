@@ -23,7 +23,7 @@ export default {
   NwRpCsw1hKX+pTa2J8Y4KJB87PBsvzpAJ3J/Buyba8ET1B/RZK5l532pXPzYgLYZ
   WgUdAvVweE/yGPJY1wIDAQAB
   -----END PUBLIC KEY-----`,
-  accessTokenTtl: "15m",
+  accessTokenTtl: "60m",
   refreshTokenTtl: "1y",
   FIREBASE_DB_CONFIG: {
     apiKey: "AIzaSyCpuU7tJgSciOLdUB-fVJsRaSpDRD72NJs",
