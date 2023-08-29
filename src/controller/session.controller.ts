@@ -15,15 +15,15 @@ const errorLoginUrl = `${config.get("FRONT_END_URL")}/#/login/error`;
 const oAuthError = `${config.get("FRONT_END_URL")}/#/oauth/error`;
 
 const accessTokenCookieOptions: CookieOptions = {
-  maxAge: 300000,
+  maxAge: 1000 * 60 * 60,
   httpOnly: true,
   sameSite: "none",
-  secure: true
+  secure: true,
 };
 
 const refershTokenCookieOptions: CookieOptions = {
   ...accessTokenCookieOptions,
-  maxAge: 3.154e10
+  maxAge: 3.154e10,
 };
 
 export async function googleOAuthHandler(req: Request, res: Response) {
@@ -45,21 +45,36 @@ export async function googleOAuthHandler(req: Request, res: Response) {
     }
 
     const { name, email, picture } = userInfo;
-    const defaultRole = "USER";
-    const user: any = { name, email, picture, role: defaultRole };
+
+    const isUserRegisterInApp = await getUserByEmailId(email);
+    let user = null;
+    if (isUserRegisterInApp) {
+      user = isUserRegisterInApp;
+    } else {
+      const defaultRole = "USER";
+      user = { name, emailId: email, picture, role: defaultRole };
+    }
+
+    // const user: any = { name, email, picture, role: defaultRole };
     logger.info("Created user object with userDetails - ", user);
     logger.info("creating access token and refresh token for session control");
     const accessTokenTtl: string = config.get("accessTokenTtl");
     const refereshTokenTtl: string = config.get("refreshTokenTtl");
-    const app_access_token = signjwt({ ...user }, { expiresIn: accessTokenTtl });
-    const app_refresh_token = signjwt({ ...user }, { expiresIn: refereshTokenTtl });
+    const app_access_token = signjwt(
+      { ...user },
+      { expiresIn: accessTokenTtl }
+    );
+    const app_refresh_token = signjwt(
+      { ...user },
+      { expiresIn: refereshTokenTtl }
+    );
     logger.info("setting accessToken and refreshToken in headers");
     res.cookie("accessToken", app_access_token, accessTokenCookieOptions);
     res.cookie("refreshToken", app_refresh_token, refershTokenCookieOptions);
     res.set("x-access-token", app_access_token);
     logger.info("setting x-access-token.... ");
 
-    const isUserRegisterInApp = await getUserByEmailId(user.email);
+    // const isUserRegisterInApp = await getUserByEmailId(user.email);
     if (isUserRegisterInApp) {
       logger.info("User already registerd in application", isUserRegisterInApp);
       logger.info("Redirecting to User Dashboard....");
@@ -103,7 +118,10 @@ export async function getGoogleOAuthUrl(req: Request, res: Response) {
     access_type: "offline",
     response_type: "code",
     prompt: "consent",
-    scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"].join(" ")
+    scope: [
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+    ].join(" "),
   };
   const qs = new URLSearchParams(options);
   logger.debug("getGoogleOAuthUrl retrung code ", qs.toString());
