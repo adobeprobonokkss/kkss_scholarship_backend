@@ -12,10 +12,16 @@ import {
   doc,
   updateDoc,
   QueryConstraint,
+  setDoc,
 } from "firebase/firestore";
 import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
-import { ScholarshipDataRequest } from "../utils/types";
+import {
+  RoleType,
+  ScholarshipData,
+  ScholarshipDataRequest,
+} from "../utils/types";
+import { formatDate } from "../utils/shared";
 
 const FIREBASE_DB_CONFIG = config.get("FIREBASE_DB_CONFIG");
 
@@ -26,13 +32,14 @@ interface UserSchema {
   emailId: string;
   name: string;
   picture: string;
+  role: string;
 }
 
 const USERS_COLLECTION = "user";
 const SCHOLARSHIP_IDS_COLLECTION = "scholarship_IDs";
 const SCHOLARSHIP_FORMS_COLLECTION = "scholarship_forms";
 
-export async function getUserByEmailId(emailId: string) {
+export async function getUserByEmailId(emailId: string): Promise<UserSchema> {
   try {
     const _query = query(
       collection(db, USERS_COLLECTION),
@@ -44,7 +51,7 @@ export async function getUserByEmailId(emailId: string) {
       `Getting User List length for user ${emailId} and it should always be 1`,
       usersList.length
     );
-    return usersList[0];
+    return usersList[0] as UserSchema;
   } catch (error) {
     logger.error(
       `Encounterd error while fetching email id ${emailId} from user Database`,
@@ -67,14 +74,17 @@ export async function createNewUser(user: UserSchema) {
   }
 }
 
-export async function getAllUsers(role: string) {
+export async function getAllUsers(key: string, partialText: string) {
   try {
-    const snapshot = collection(db, USERS_COLLECTION);
-    const usersnapShot = await getDocs(snapshot);
-    const users = await usersnapShot.docs.map((doc) => doc.data());
-
-    console.log(users);
-    return users;
+    const _query = query(
+      collection(db, USERS_COLLECTION),
+      orderBy(key),
+      startAt(partialText),
+      endAt(partialText + "\uf8ff")
+    );
+    const filteredObject = await getDocs(_query);
+    const filteredList = filteredObject.docs.map((doc) => doc.data());
+    return filteredList;
   } catch (error) {
     logger.error("Error listing collections: ", error);
     return null;
@@ -84,62 +94,77 @@ export async function getAllUsers(role: string) {
 // check if Scholarship ID exists
 export async function checkIfScholarshipIDExists(scholarshipID: string) {
   try {
-    const snapshot = collection(db, SCHOLARSHIP_IDS_COLLECTION);
-    const scholarshipIDSnapshot = await getDocs(snapshot);
-
-    const scholarshipIDArray = scholarshipIDSnapshot.docs[0].get("IDs");
-
-    return scholarshipIDArray.includes(scholarshipID);
+    const _query = query(
+      collection(db, SCHOLARSHIP_IDS_COLLECTION),
+      where("scholarshipID", "==", scholarshipID)
+    );
+    const filteredObject = await getDocs(_query);
+    const filteredList = filteredObject.docs.map((doc) => doc.data());
+    return filteredList.length > 0 ? true : false;
   } catch (error) {
     logger.error("Error listing collections: ", error);
   }
 }
 
 // save scholarship ID
-export async function saveScholarshipID(scholarshipID: string) {
+export async function saveScholarshipID(scholarshipID: string, email: string) {
   try {
-    const scholarshipIDCol = collection(db, SCHOLARSHIP_IDS_COLLECTION);
-    const scholarshipIDSnapshot = await getDocs(scholarshipIDCol);
-    const scholarshipIDArray = scholarshipIDSnapshot.docs[0].get("IDs");
-    scholarshipIDArray.push(scholarshipID);
-
-    updateDoc(doc(db, SCHOLARSHIP_IDS_COLLECTION, "taQQLHSS0MqqhqNHerMa"), {
-      IDs: scholarshipIDArray,
-    });
+    await setDoc(
+      doc(db, SCHOLARSHIP_IDS_COLLECTION, `${email}-${scholarshipID}`),
+      {
+        scholarshipID: scholarshipID,
+        email: email,
+      }
+    );
   } catch (error) {
     logger.error("Error listing collections: ", error);
   }
 }
 
 // save scholarship form data
-export async function saveScholarshipFormData(scholarshipFormData: any) {
+export async function saveScholarshipFormData(
+  scholarshipFormData: ScholarshipData
+) {
+  const submissionYear = new Date().getFullYear();
+  const submissionDate = formatDate(new Date());
   try {
     if (!scholarshipFormData.scholarshipID) {
       // generate scholarship ID using uuid
       const ShortUniqueId = require("short-unique-id");
-      const uuid = new ShortUniqueId({ length: 16 });
+      const uuid = new ShortUniqueId({
+        length: 12,
+        dictionary: "number",
+        shuffle: true,
+      });
 
-      let scholarshipID = uuid();
+      let scholarshipID = `KKSS${submissionYear}${uuid()}`;
 
       while (await checkIfScholarshipIDExists(scholarshipID)) {
         // generate new scholarship ID if already exists
-        scholarshipID = uuid.v4();
+        scholarshipID = `KKSS${submissionYear}${uuid()}}`;
       }
-      await saveScholarshipID(scholarshipID);
+      await saveScholarshipID(scholarshipID, scholarshipFormData.email);
+      scholarshipFormData.submissionYear = `${submissionYear}`;
+      scholarshipFormData.submissionDate = submissionDate;
       scholarshipFormData.scholarshipID = scholarshipID;
       scholarshipFormData.status = "submitted";
     }
-    const scholarshipFormCol = collection(db, SCHOLARSHIP_FORMS_COLLECTION);
-    const isAdded = await addDoc(scholarshipFormCol, scholarshipFormData);
+    await setDoc(
+      doc(db, SCHOLARSHIP_FORMS_COLLECTION, scholarshipFormData.scholarshipID),
+      scholarshipFormData
+    );
 
     return {
       scholarshipID: scholarshipFormData.scholarshipID,
-      status: isAdded ? "success" : "failed",
-      message: `Scholarship form data ${isAdded ? "saved" : "not saved"}}`,
+      status: "success",
+      message: `Scholarship application "saved" successfully`,
     };
   } catch (error) {
-    logger.error("Error listing collections: ", error);
-    return null;
+    return {
+      status: "failed",
+      message: `There was an error while saving scholarship application data`,
+      error: error,
+    };
   }
 }
 
@@ -202,6 +227,78 @@ export async function getScholarshipFormData(request: ScholarshipDataRequest) {
   }
 }
 
+// Update scholarship form data
+export async function updateScholarshipFormData(
+  userEmail: string,
+  scholarshipFormData: ScholarshipData
+) {
+  try {
+    if (!userEmail) throw new Error("User email is required");
+    if (!scholarshipFormData)
+      throw new Error("Scholarship form data is required");
+    const user = await getUserByEmailId(userEmail);
+    const status = scholarshipFormData.status;
+    switch (status) {
+      case "initial_review_completed":
+        if (user.role === RoleType.USER || user.role === RoleType.REVIEWER) {
+          return {
+            status: "failed",
+            message: `You are not authorized to update the status of this application`,
+          };
+        }
+        break;
+      case "background_verification_completed":
+        if (user.role === RoleType.USER) {
+          return {
+            status: "failed",
+            message: `You are not authorized to update the status of this application`,
+          };
+        }
+        break;
+      case "final_review_completed":
+        if (user.role === RoleType.USER || user.role === RoleType.REVIEWER) {
+          return {
+            status: "failed",
+            message: `You are not authorized to update the status of this application`,
+          };
+        }
+        break;
+      case "approved":
+        if (user.role !== RoleType.ADMIN) {
+          return {
+            status: "failed",
+            message: `You are not authorized to update the status of this application`,
+          };
+        }
+        break;
+      case "rejected":
+        if (user.role !== RoleType.ADMIN) {
+          return {
+            status: "failed",
+            message: `You are not authorized to update the status of this application`,
+          };
+        }
+        break;
+    }
+
+    await updateDoc(
+      doc(db, SCHOLARSHIP_FORMS_COLLECTION, scholarshipFormData.scholarshipID),
+      scholarshipFormData
+    );
+    return {
+      scholarshipID: scholarshipFormData.scholarshipID,
+      status: "success",
+      message: `Scholarship application "updated" successfully`,
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      message: `There was an error while updating scholarship application data`,
+      error: error,
+    };
+  }
+}
+
 // get all scholarship form data
 export async function getAllScholarshipFormData() {
   try {
@@ -221,5 +318,25 @@ export async function getAllScholarshipFormData() {
       status: "failed",
       message: error,
     };
+  }
+}
+
+export async function updateUserData(email: string, updatedRole: string) {
+  const usersCollection = collection(db, USERS_COLLECTION);
+  const q = query(usersCollection, where("email", "==", email));
+
+  try {
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      querySnapshot.forEach(async (queryDocSnapshot) => {
+        const docRef = doc(usersCollection, queryDocSnapshot.id);
+        await updateDoc(docRef, { email: email, role: updatedRole });
+        console.log("Document updated:", queryDocSnapshot.id);
+      });
+    } else {
+      console.log("No users found with the specified email.");
+    }
+  } catch (error) {
+    console.error("Error updating documents:", error);
   }
 }
