@@ -20,10 +20,8 @@ export async function submitApplicationHandler(req: any, res: Response) {
   return res.status(200).json(response);
 }
 
-export async function getScholarshipFormDataHandler(
-  req: Request,
-  res: Response
-) {
+export async function getScholarshipFormDataHandler(req: any, res: Response) {
+  console.log(req.user);
   const response = await getScholarshipFormData(req.body);
   return res.status(200).json(response);
 }

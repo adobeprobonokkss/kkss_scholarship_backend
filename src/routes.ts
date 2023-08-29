@@ -43,11 +43,16 @@ function routes(app: Express) {
   app.post("/api/v1/submitApplication", submitApplicationHandler);
 
   // get scholarship form data
-  app.post("/api/v1/getScholarshipFormData", getScholarshipFormDataHandler);
+  app.post(
+    "/api/v1/getScholarshipFormData",
+    requiredUser,
+    getScholarshipFormDataHandler
+  );
 
   // get all scholarship form data
   app.get(
     "/api/v1/getAllScholarshipFormData",
+    requiredUser,
     getAllScholarshipFormDataHandler
   );
 
