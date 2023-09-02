@@ -21,8 +21,7 @@ export async function submitApplicationHandler(req: any, res: Response) {
 }
 
 export async function getScholarshipFormDataHandler(req: any, res: Response) {
-  console.log(req.user);
-  const response = await getScholarshipFormData(req.body);
+  const response = await getScholarshipFormData(req.body, req.user.decoded);
   return res.status(200).json(response);
 }
 
