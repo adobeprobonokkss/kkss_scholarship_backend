@@ -200,15 +200,32 @@ async function getScholarshipDocuments(
 }
 
 // get scholarship form data by config
-export async function getScholarshipFormData(request: ScholarshipDataRequest) {
+export async function getScholarshipFormData(
+  request: ScholarshipDataRequest,
+  user: any
+) {
   try {
-    const scholarshipFormList = await getScholarshipDocuments(
+    let scholarshipFormList = await getScholarshipDocuments(
       SCHOLARSHIP_FORMS_COLLECTION,
       request.field,
       request.keyword,
       request.year,
       request.status
     );
+    if (user.role === RoleType.USER) {
+      scholarshipFormList = scholarshipFormList.filter(
+        (scholarshipForm) => scholarshipForm.email === user.email
+      );
+    }
+
+    if (user.role === RoleType.REVIEWER) {
+      scholarshipFormList = scholarshipFormList.filter(
+        (scholarshipForm) =>
+          scholarshipForm.backgroundVerifierEmail === user.email &&
+          (scholarshipForm.status === "submitted" ||
+            scholarshipForm.status === "initial_review_completed")
+      );
+    }
     return {
       field: request.field,
       keyword: request.keyword,
