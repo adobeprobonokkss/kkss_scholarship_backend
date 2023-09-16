@@ -12,11 +12,14 @@ import {
 } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 import {
+  approveVolunteeringHoursHandler,
   checkIfScholarshipIDExistsHandler,
   getAllScholarshipFormDataHandler,
   getScholarshipFormDataHandler,
+  getVolunteeringHoursHandler,
   reviewApplicationHandler,
   submitApplicationHandler,
+  submitVolunteeringHoursHandler,
 } from "./controller/scholarshipForm.controller";
 
 function routes(app: Express) {
@@ -69,6 +72,27 @@ function routes(app: Express) {
     "/api/v1/protected/promoteUserRole",
     [requiredUser, isUserAuthorized],
     promoteUserRole
+  );
+
+  // submit volunteering hours
+  app.post(
+    "/api/v1/submitVolunteeringHours",
+    requiredUser,
+    submitVolunteeringHoursHandler
+  );
+
+  // get volunteering hours
+  app.post(
+    "/api/v1/getVolunteeringHours",
+    requiredUser,
+    getVolunteeringHoursHandler
+  );
+
+  // approve volunteering hours
+  app.post(
+    "/api/v1/approveVolunteeringHours",
+    requiredUser,
+    approveVolunteeringHoursHandler
   );
 }
 

@@ -70,3 +70,15 @@ export type ScholarshipData = {
   backgroundVerifierComment?: string;
   adminComment?: string;
 };
+
+export type VolunteeringDetails = {
+  activityDate?: string;
+  noOfHours?: string;
+  activityDescription?: string;
+  scholarshipID?: string;
+  email?: string;
+  name?: string;
+  submissionDate?: string;
+  status?: string;
+  requestID?: string;
+};

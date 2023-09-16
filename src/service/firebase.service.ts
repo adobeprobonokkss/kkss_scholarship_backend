@@ -1,4 +1,4 @@
-import config, { get } from "config";
+import config from "config";
 import {
   getFirestore,
   query,
@@ -13,6 +13,7 @@ import {
   updateDoc,
   QueryConstraint,
   setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
@@ -20,6 +21,7 @@ import {
   RoleType,
   ScholarshipData,
   ScholarshipDataRequest,
+  VolunteeringDetails,
 } from "../utils/types";
 import { formatDate } from "../utils/shared";
 
@@ -38,6 +40,8 @@ interface UserSchema {
 const USERS_COLLECTION = "user";
 const SCHOLARSHIP_IDS_COLLECTION = "scholarship_IDs";
 const SCHOLARSHIP_FORMS_COLLECTION = "scholarship_forms";
+const VOLUNTEER_HOURS_LIST_COLLECTION = "volunteering_hours_list";
+const VOLUNTEERING_HOURS_COLLECTION = "volunteering_hours";
 
 export async function getUserByEmailId(emailId: string): Promise<UserSchema> {
   try {
@@ -355,5 +359,187 @@ export async function updateUserData(email: string, updatedRole: string) {
     }
   } catch (error) {
     console.error("Error updating documents:", error);
+  }
+}
+
+// submit Volunteering Hours
+export async function submitVolunteeringHours(
+  volunteeringDetails: VolunteeringDetails,
+  user: any
+) {
+  try {
+    const submissionDate = formatDate(new Date());
+    const scholarship_forms = await getScholarshipFormData(
+      {
+        field: "email",
+        keyword: user.email.trim() as string,
+        year: "",
+        status: "",
+      },
+      user
+    );
+    volunteeringDetails.scholarshipID =
+      scholarship_forms.scholarshipFormData[0].scholarshipID;
+    volunteeringDetails.submissionDate = submissionDate;
+    volunteeringDetails.status = "submitted";
+    volunteeringDetails.email = user.email;
+    volunteeringDetails.name = user.name;
+
+    const ShortUniqueId = require("short-unique-id");
+    const uuid = new ShortUniqueId({
+      length: 12,
+      dictionary: "number",
+      shuffle: true,
+    });
+
+    const requestID = `${volunteeringDetails.scholarshipID}${uuid()}`;
+
+    volunteeringDetails.requestID = requestID;
+
+    await setDoc(
+      doc(
+        db,
+        VOLUNTEER_HOURS_LIST_COLLECTION,
+        `${volunteeringDetails.requestID}`
+      ),
+      volunteeringDetails
+    );
+
+    return {
+      status: "success",
+      message: `Volunteering Hours "saved" successfully`,
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
+  }
+}
+
+// approve Volunteering Hours
+export async function approveVolunteeringHours(
+  requestID: string,
+  email: string,
+  user: any
+) {
+  try {
+    const volunteeringHours = (await getVolunteeringHours(user))
+      .volunteeringHoursList[0];
+    const activityHours = (await getVolunteerActivityHours(requestID))
+      .volunteerActivityHoursList[0];
+    const approvedVolunteeringHours = {
+      email: activityHours.email,
+      name: activityHours.name,
+      scholarshipID: activityHours.scholarshipID,
+      approvedHours: volunteeringHours.approvedHours + activityHours.hours,
+    };
+
+    await setDoc(
+      doc(
+        db,
+        VOLUNTEERING_HOURS_COLLECTION,
+        `${approvedVolunteeringHours.scholarshipID}}`
+      ),
+      volunteeringHours
+    );
+
+    // delete from volunteering_hours_list
+    await deleteDoc(doc(db, VOLUNTEER_HOURS_LIST_COLLECTION, `${requestID}`));
+
+    return {
+      status: "success",
+      message: `Volunteering Hours "approved" successfully`,
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
+  }
+}
+
+// get Volunteering Hours by user
+export async function getVolunteeringHours(email: any) {
+  try {
+    const scholarship_forms = await getScholarshipFormData(
+      {
+        field: "email",
+        keyword: user.email.trim() as string,
+        year: "",
+        status: "",
+      },
+      user
+    );
+    const scholarshipID =
+      scholarship_forms.scholarshipFormData[0].scholarshipID;
+    const _query = query(
+      collection(db, VOLUNTEERING_HOURS_COLLECTION),
+      where("scholarshipID", "==", scholarshipID)
+    );
+    const volunteeringHoursSnapshot = await getDocs(_query);
+    const volunteeringHoursList = volunteeringHoursSnapshot.docs.map((doc) =>
+      doc.data()
+    );
+    return {
+      volunteeringHoursList: volunteeringHoursList,
+      status: "success",
+      message: "Volunteering Hours fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
+  }
+}
+
+// get Volunteer Activity Hours by requestID
+export async function getVolunteerActivityHours(requestID: string) {
+  try {
+    const _query = query(
+      collection(db, VOLUNTEER_HOURS_LIST_COLLECTION),
+      where("requestID", "==", requestID)
+    );
+    const volunteerActivityHoursSnapshot = await getDocs(_query);
+    const volunteerActivityHoursList = volunteerActivityHoursSnapshot.docs.map(
+      (doc) => doc.data()
+    );
+    return {
+      volunteerActivityHoursList: volunteerActivityHoursList,
+      status: "success",
+      message: "Volunteer Activity Hours fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
+  }
+}
+
+// get all Volunteer Activity Hours
+export async function getAllVolunteerActivityHours() {
+  try {
+    const _query = query(collection(db, VOLUNTEER_HOURS_LIST_COLLECTION));
+    const volunteerActivityHoursSnapshot = await getDocs(_query);
+    const volunteerActivityHoursList = volunteerActivityHoursSnapshot.docs.map(
+      (doc) => doc.data()
+    );
+    return {
+      volunteerActivityHoursList: volunteerActivityHoursList,
+      status: "success",
+      message: "Volunteer Activity Hours fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
   }
 }
