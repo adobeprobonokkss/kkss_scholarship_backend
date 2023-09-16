@@ -49,6 +49,14 @@ function routes(app: Express) {
     getScholarshipFormDataHandler
   );
 
+  app.get(
+    "/api/v1/getScholarshipFormData",
+    requiredUser,
+    getScholarshipFormDataHandler
+  );
+
+  //get user applied scholarship data for dashboard
+
   // get all scholarship form data
   app.get(
     "/api/v1/getAllScholarshipFormData",
