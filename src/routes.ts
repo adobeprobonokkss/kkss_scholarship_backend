@@ -17,6 +17,7 @@ import {
   getScholarshipFormDataHandler,
   reviewApplicationHandler,
   submitApplicationHandler,
+  getTotalCountHandler,
 } from "./controller/scholarshipForm.controller";
 
 function routes(app: Express) {
@@ -78,6 +79,8 @@ function routes(app: Express) {
     [requiredUser, isUserAuthorized],
     promoteUserRole
   );
+
+  app.post("/api/v1/protected/getCountHandler", getTotalCountHandler);
 }
 
 export default routes;
