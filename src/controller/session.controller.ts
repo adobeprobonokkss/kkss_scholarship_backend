@@ -52,7 +52,7 @@ export async function googleOAuthHandler(req: Request, res: Response) {
       user = isUserRegisterInApp;
     } else {
       const defaultRole = "USER";
-      user = { name, emailId: email, picture, role: defaultRole };
+      user = { name, email: email, picture, role: defaultRole };
     }
 
     // const user: any = { name, email, picture, role: defaultRole };
