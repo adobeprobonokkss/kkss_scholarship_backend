@@ -23,32 +23,33 @@ export async function submitApplicationHandler(req: any, res: Response) {
 }
 
 export async function getScholarshipFormDataHandler(req: any, res: Response) {
-  if (req.user.decoded.role == RoleType.USER) {
-    const response = await getScholarshipFormData(
-      {
-        field: "email",
-        keyword: req.user.decoded.email,
-        year: null,
-        status: null,
-      },
-      req.user.decoded
-    );
-    return res.status(200).json(response);
-  } else if (req.user.decoded.role == RoleType.REVIEWER) {
-    const response = await getScholarshipFormData(
-      {
-        field: "backgroundVerifierEmail",
-        keyword: req.user.decoded.email,
-        year: null,
-        status: null,
-      },
-      req.user.decoded
-    );
-    return res.status(200).json(response);
-  } else {
-    const response = await getScholarshipFormData(req.body, req.user.decoded);
-    return res.status(200).json(response);
-  }
+  // if (req.user.decoded.role == RoleType.USER) {
+  //   const response = await getScholarshipFormData(
+  //     {
+  //       field: "email",
+  //       keyword: req.user.decoded.email,
+  //       year: null,
+  //       status: null,
+  //     },
+  //     req.user.decoded
+  //   );
+
+  //   return res.status(200).json(response);
+  // } else if (req.user.decoded.role == RoleType.REVIEWER) {
+  //   const response = await getScholarshipFormData(
+  //     {
+  //       field: "backgroundVerifierEmail",
+  //       keyword: req.user.decoded.email,
+  //       year: null,
+  //       status: null,
+  //     },
+  //     req.user.decoded
+  //   );
+  //   return res.status(200).json(response);
+  // } else {
+  const response = await getScholarshipFormData(req.body, req.user.decoded);
+  return res.status(200).json(response);
+  // }
 }
 
 // get all Scholarship form data

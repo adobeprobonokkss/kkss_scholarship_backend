@@ -221,6 +221,8 @@ export async function getScholarshipFormData(
       );
     }
 
+    console.log("lenght", scholarshipFormList.length);
+
     if (user.role === RoleType.REVIEWER) {
       scholarshipFormList = scholarshipFormList.filter(
         (scholarshipForm) =>
