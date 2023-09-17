@@ -13,6 +13,7 @@ import {
   updateDoc,
   QueryConstraint,
   setDoc,
+  getCountFromServer,
 } from "firebase/firestore";
 import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
@@ -82,6 +83,8 @@ export async function getAllUsers(key: string, partialText: string) {
       startAt(partialText),
       endAt(partialText + "\uf8ff")
     );
+    // const snapshot = await getCountFromServer(_query);
+    // console.log("total number of users-", snapshot.data().count);
     const filteredObject = await getDocs(_query);
     const filteredList = filteredObject.docs.map((doc) => doc.data());
     return filteredList;
@@ -217,6 +220,8 @@ export async function getScholarshipFormData(
         (scholarshipForm) => scholarshipForm.email === user.email
       );
     }
+
+    console.log("lenght", scholarshipFormList.length);
 
     if (user.role === RoleType.REVIEWER) {
       scholarshipFormList = scholarshipFormList.filter(
@@ -356,4 +361,29 @@ export async function updateUserData(email: string, updatedRole: string) {
   } catch (error) {
     console.error("Error updating documents:", error);
   }
+}
+
+//aggreagate service
+
+export async function getCountOfScholarShipData(year: string, status: string) {
+  console.log(year, "hello");
+  const queryList: QueryConstraint[] = [];
+  const keywordSearchQuery: QueryConstraint[] = [];
+  if (year) {
+    queryList.push(where("submissionYear", "==", year));
+  }
+  if (status) {
+    queryList.push(where("status", "==", status));
+  }
+
+  const _query = query(
+    collection(db, SCHOLARSHIP_FORMS_COLLECTION),
+    ...queryList
+  );
+  const snapshot = await getCountFromServer(_query);
+  return {
+    status,
+    year: year,
+    count: snapshot.data().count,
+  };
 }
