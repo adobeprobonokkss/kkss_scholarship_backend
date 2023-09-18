@@ -30,7 +30,7 @@ const admin = initializeApp(FIREBASE_DB_CONFIG as FirebaseOptions);
 const db = getFirestore(admin);
 
 interface UserSchema {
-  emailId: string;
+  email: string;
   name: string;
   picture: string;
   role: string;
