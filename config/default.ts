@@ -1,11 +1,14 @@
+const environment: string = "production";
 const LOCAL_BACKEND_URL = "http://localhost:1337";
 const PROD_BACKEND_URL =
   "https://asia-south1-kkss-5a230.cloudfunctions.net/kkssCloudFunctions";
-const baseBackendURL = PROD_BACKEND_URL;
+const baseBackendURL =
+  environment === "development" ? LOCAL_BACKEND_URL : PROD_BACKEND_URL;
 
 const LOCAL_FRONTEND_URL = "http://localhost:9000";
 const PROD_FRONTEND_URL = "https://kkss-5a230.web.app";
-const baseFrontendURL = PROD_FRONTEND_URL;
+const baseFrontendURL =
+  environment === "development" ? LOCAL_FRONTEND_URL : PROD_FRONTEND_URL;
 
 export default {
   origin: "*",
