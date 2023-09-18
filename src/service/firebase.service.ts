@@ -64,10 +64,10 @@ export async function getUserByEmailId(emailId: string): Promise<UserSchema> {
 
 export async function createNewUser(user: UserSchema) {
   try {
-    const userCol = collection(db, USERS_COLLECTION);
-    const isAdded = await addDoc(userCol, user);
+    // const userCol = collection(db, USERS_COLLECTION);
+    // const isAdded = await addDoc(userCol, user);
+    setDoc(doc(db, USERS_COLLECTION, user.email), user);
     logger.info("User registerd successfully");
-    logger.info(JSON.stringify(isAdded));
     return user;
   } catch (error) {
     logger.error("Error listing collections: ", error);
