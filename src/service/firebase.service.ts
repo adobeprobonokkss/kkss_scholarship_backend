@@ -14,6 +14,7 @@ import {
   QueryConstraint,
   setDoc,
   deleteDoc,
+  getCountFromServer,
 } from "firebase/firestore";
 import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
@@ -31,7 +32,7 @@ const admin = initializeApp(FIREBASE_DB_CONFIG as FirebaseOptions);
 const db = getFirestore(admin);
 
 interface UserSchema {
-  emailId: string;
+  email: string;
   name: string;
   picture: string;
   role: string;
@@ -67,10 +68,10 @@ export async function getUserByEmailId(emailId: string): Promise<UserSchema> {
 
 export async function createNewUser(user: UserSchema) {
   try {
-    const userCol = collection(db, USERS_COLLECTION);
-    const isAdded = await addDoc(userCol, user);
+    // const userCol = collection(db, USERS_COLLECTION);
+    // const isAdded = await addDoc(userCol, user);
+    setDoc(doc(db, USERS_COLLECTION, user.email), user);
     logger.info("User registerd successfully");
-    logger.info(JSON.stringify(isAdded));
     return user;
   } catch (error) {
     logger.error("Error listing collections: ", error);
@@ -86,6 +87,8 @@ export async function getAllUsers(key: string, partialText: string) {
       startAt(partialText),
       endAt(partialText + "\uf8ff")
     );
+    // const snapshot = await getCountFromServer(_query);
+    // console.log("total number of users-", snapshot.data().count);
     const filteredObject = await getDocs(_query);
     const filteredList = filteredObject.docs.map((doc) => doc.data());
     return filteredList;
@@ -221,6 +224,8 @@ export async function getScholarshipFormData(
         (scholarshipForm) => scholarshipForm.email === user.email
       );
     }
+
+    console.log("lenght", scholarshipFormList.length);
 
     if (user.role === RoleType.REVIEWER) {
       scholarshipFormList = scholarshipFormList.filter(
@@ -542,4 +547,28 @@ export async function getAllVolunteerActivityHours() {
       message: error,
     };
   }
+}
+//aggreagate service
+
+export async function getCountOfScholarShipData(year: string, status: string) {
+  console.log(year, "hello");
+  const queryList: QueryConstraint[] = [];
+  const keywordSearchQuery: QueryConstraint[] = [];
+  if (year) {
+    queryList.push(where("submissionYear", "==", year));
+  }
+  if (status) {
+    queryList.push(where("status", "==", status));
+  }
+
+  const _query = query(
+    collection(db, SCHOLARSHIP_FORMS_COLLECTION),
+    ...queryList
+  );
+  const snapshot = await getCountFromServer(_query);
+  return {
+    status,
+    year: year,
+    count: snapshot.data().count,
+  };
 }

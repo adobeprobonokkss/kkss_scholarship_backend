@@ -20,6 +20,7 @@ import {
   reviewApplicationHandler,
   submitApplicationHandler,
   submitVolunteeringHoursHandler,
+  getTotalCountHandler,
 } from "./controller/scholarshipForm.controller";
 
 function routes(app: Express) {
@@ -51,6 +52,14 @@ function routes(app: Express) {
     requiredUser,
     getScholarshipFormDataHandler
   );
+
+  app.get(
+    "/api/v1/getScholarshipFormData",
+    requiredUser,
+    getScholarshipFormDataHandler
+  );
+
+  //get user applied scholarship data for dashboard
 
   // get all scholarship form data
   app.get(
@@ -94,6 +103,7 @@ function routes(app: Express) {
     requiredUser,
     approveVolunteeringHoursHandler
   );
+  app.post("/api/v1/protected/getCountHandler", getTotalCountHandler);
 }
 
 export default routes;
