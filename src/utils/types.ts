@@ -3,6 +3,7 @@ export type ScholarshipDataRequest = {
   keyword: string;
   year: string;
   status: string;
+  limit?: number;
 };
 
 export enum RoleType {
@@ -69,4 +70,23 @@ export type ScholarshipData = {
   programManagerComment2?: string;
   backgroundVerifierComment?: string;
   adminComment?: string;
+};
+
+export type VolunteeringDetails = {
+  activityDate?: string;
+  noOfHours?: string;
+  activityDescription?: string;
+  scholarshipID?: string;
+  email?: string;
+  name?: string;
+  submissionDate?: string;
+  status?: string;
+  requestID?: string;
+};
+
+export type VoluteeringRecord = {
+  email: string;
+  name: string;
+  scholarshipID: string;
+  approvedHours: string;
 };
