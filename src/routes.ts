@@ -12,7 +12,7 @@ import {
 } from "./controller/user.controller";
 import { requiredUser } from "./middleware/requireduser";
 import {
-  approveVolunteeringHoursHandler,
+  approveOrRejectVolunteeringHoursHandler,
   checkIfScholarshipIDExistsHandler,
   getAllScholarshipFormDataHandler,
   getScholarshipFormDataHandler,
@@ -21,6 +21,10 @@ import {
   submitApplicationHandler,
   submitVolunteeringHoursHandler,
   getTotalCountHandler,
+  getAllVolunteerActivityHoursHandler,
+  getAllVolunteeringActivityHoursByUserHandler,
+  getVolunteerActivityHoursByRequestIDHandler,
+  getVolunteerHoursByScholarshipIDListHandler,
 } from "./controller/scholarshipForm.controller";
 
 function routes(app: Express) {
@@ -40,11 +44,12 @@ function routes(app: Express) {
   // check if scholarship ID exists
   app.post(
     "/api/v1/checkIfScholarshipIDExists",
+    requiredUser,
     checkIfScholarshipIDExistsHandler
   );
 
   // submit scholarship form
-  app.post("/api/v1/submitApplication", submitApplicationHandler);
+  app.post("/api/v1/submitApplication", requiredUser, submitApplicationHandler);
 
   // get scholarship form data
   app.post(
@@ -69,7 +74,7 @@ function routes(app: Express) {
   );
 
   // review application
-  app.post("/api/v1/reviewApplication", reviewApplicationHandler);
+  app.post("/api/v1/reviewApplication", requiredUser, reviewApplicationHandler);
 
   app.post(
     "/api/v1/protected/get/users",
@@ -97,12 +102,41 @@ function routes(app: Express) {
     getVolunteeringHoursHandler
   );
 
+  // get all Volunteering Activity by user
+  app.post(
+    "/api/v1/getAllVolunteeringActivityHoursByUser",
+    requiredUser,
+    getAllVolunteeringActivityHoursByUserHandler
+  );
+
+  // get Volunteer Activity Hours by requestID
+  app.post(
+    "/api/v1/getVolunteerActivityHoursByRequestID",
+    requiredUser,
+    getVolunteerActivityHoursByRequestIDHandler
+  );
+
+  // get all Volunteer Activity Hours
+  app.post(
+    "/api/v1/getAllVolunteerActivityHours",
+    requiredUser,
+    getAllVolunteerActivityHoursHandler
+  );
+
   // approve volunteering hours
   app.post(
-    "/api/v1/approveVolunteeringHours",
+    "/api/v1/approveOrRejectVolunteeringHours",
     requiredUser,
-    approveVolunteeringHoursHandler
+    approveOrRejectVolunteeringHoursHandler
   );
+
+  // get Volunteer Hours by scholarshipID List
+  app.post(
+    "/api/v1/getVolunteerHoursByScholarshipIDList",
+    requiredUser,
+    getVolunteerHoursByScholarshipIDListHandler
+  );
+
   app.post("/api/v1/protected/getCountHandler", getTotalCountHandler);
 }
 

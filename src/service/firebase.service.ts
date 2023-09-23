@@ -15,6 +15,7 @@ import {
   setDoc,
   deleteDoc,
   getCountFromServer,
+  limit,
 } from "firebase/firestore";
 import { FirebaseOptions, initializeApp } from "firebase/app";
 import { logger } from "./../utils/logger";
@@ -31,7 +32,7 @@ const FIREBASE_DB_CONFIG = config.get("FIREBASE_DB_CONFIG");
 const admin = initializeApp(FIREBASE_DB_CONFIG as FirebaseOptions);
 const db = getFirestore(admin);
 
-interface UserSchema {
+export interface UserSchema {
   email: string;
   name: string;
   picture: string;
@@ -180,8 +181,10 @@ async function getScholarshipDocuments(
   field: string,
   keyword: string,
   year: string,
-  status: string
+  status: string,
+  setLimit: number = 50
 ): Promise<any[]> {
+  console.log("limitCheck", collectionName, field, keyword, year, status);
   const queryList: QueryConstraint[] = [];
   const keywordSearchQuery: QueryConstraint[] = [];
   if (year) {
@@ -199,7 +202,8 @@ async function getScholarshipDocuments(
   const _query = query(
     collection(db, collectionName),
     ...queryList,
-    ...keywordSearchQuery
+    ...keywordSearchQuery,
+    limit(setLimit)
   );
   const filteredObject = await getDocs(_query);
   const filteredList = filteredObject.docs.map((doc) => doc.data());
@@ -209,7 +213,7 @@ async function getScholarshipDocuments(
 // get scholarship form data by config
 export async function getScholarshipFormData(
   request: ScholarshipDataRequest,
-  user: any
+  user: UserSchema
 ) {
   try {
     let scholarshipFormList = await getScholarshipDocuments(
@@ -217,17 +221,17 @@ export async function getScholarshipFormData(
       request.field,
       request.keyword,
       request.year,
-      request.status
+      request.status,
+      request.limit
     );
-    if (user.role === RoleType.USER) {
+
+    if (!user || !user.role) throw new Error("User role is required");
+    if (user?.role === RoleType.USER) {
       scholarshipFormList = scholarshipFormList.filter(
         (scholarshipForm) => scholarshipForm.email === user.email
       );
     }
-
-    console.log("lenght", scholarshipFormList.length);
-
-    if (user.role === RoleType.REVIEWER) {
+    if (user?.role === RoleType.REVIEWER) {
       scholarshipFormList = scholarshipFormList.filter(
         (scholarshipForm) =>
           scholarshipForm.backgroundVerifierEmail === user.email &&
@@ -235,6 +239,7 @@ export async function getScholarshipFormData(
             scholarshipForm.status === "initial_review_completed")
       );
     }
+
     return {
       field: request.field,
       keyword: request.keyword,
@@ -266,7 +271,7 @@ export async function updateScholarshipFormData(
     const status = scholarshipFormData.status;
     switch (status) {
       case "initial_review_completed":
-        if (user.role === RoleType.USER || user.role === RoleType.REVIEWER) {
+        if (user?.role === RoleType.USER || user?.role === RoleType.REVIEWER) {
           return {
             status: "failed",
             message: `You are not authorized to update the status of this application`,
@@ -274,7 +279,7 @@ export async function updateScholarshipFormData(
         }
         break;
       case "background_verification_completed":
-        if (user.role === RoleType.USER) {
+        if (user?.role === RoleType.USER) {
           return {
             status: "failed",
             message: `You are not authorized to update the status of this application`,
@@ -282,7 +287,7 @@ export async function updateScholarshipFormData(
         }
         break;
       case "final_review_completed":
-        if (user.role === RoleType.USER || user.role === RoleType.REVIEWER) {
+        if (user?.role === RoleType.USER || user?.role === RoleType.REVIEWER) {
           return {
             status: "failed",
             message: `You are not authorized to update the status of this application`,
@@ -290,7 +295,7 @@ export async function updateScholarshipFormData(
         }
         break;
       case "approved":
-        if (user.role !== RoleType.ADMIN) {
+        if (user?.role !== RoleType.ADMIN) {
           return {
             status: "failed",
             message: `You are not authorized to update the status of this application`,
@@ -298,7 +303,7 @@ export async function updateScholarshipFormData(
         }
         break;
       case "rejected":
-        if (user.role !== RoleType.ADMIN) {
+        if (user?.role !== RoleType.ADMIN) {
           return {
             status: "failed",
             message: `You are not authorized to update the status of this application`,
@@ -307,10 +312,11 @@ export async function updateScholarshipFormData(
         break;
     }
 
-    await updateDoc(
+    await setDoc(
       doc(db, SCHOLARSHIP_FORMS_COLLECTION, scholarshipFormData.scholarshipID),
       scholarshipFormData
     );
+
     return {
       scholarshipID: scholarshipFormData.scholarshipID,
       status: "success",
@@ -326,9 +332,13 @@ export async function updateScholarshipFormData(
 }
 
 // get all scholarship form data
-export async function getAllScholarshipFormData() {
+export async function getAllScholarshipFormData(setLimit: number) {
   try {
-    const _query = query(collection(db, SCHOLARSHIP_FORMS_COLLECTION));
+    console.log("limitCheck", setLimit);
+    const _query = query(
+      collection(db, SCHOLARSHIP_FORMS_COLLECTION),
+      limit(setLimit)
+    );
     const scholarshipFormSnapshot = await getDocs(_query);
     const scholarshipFormList = scholarshipFormSnapshot.docs.map((doc) =>
       doc.data()
@@ -373,18 +383,9 @@ export async function submitVolunteeringHours(
   user: any
 ) {
   try {
+    console.log("DEBUG 0", volunteeringDetails, user);
     const submissionDate = formatDate(new Date());
-    const scholarship_forms = await getScholarshipFormData(
-      {
-        field: "email",
-        keyword: user.email.trim() as string,
-        year: "",
-        status: "",
-      },
-      user
-    );
-    volunteeringDetails.scholarshipID =
-      scholarship_forms.scholarshipFormData[0].scholarshipID;
+    volunteeringDetails.scholarshipID = volunteeringDetails.scholarshipID;
     volunteeringDetails.submissionDate = submissionDate;
     volunteeringDetails.status = "submitted";
     volunteeringDetails.email = user.email;
@@ -424,38 +425,49 @@ export async function submitVolunteeringHours(
 }
 
 // approve Volunteering Hours
-export async function approveVolunteeringHours(
+export async function approveOrRejectVolunteeringHours(
   requestID: string,
   email: string,
+  scholarshipID: string,
+  decision: string,
   user: any
 ) {
   try {
-    const volunteeringHours = (await getVolunteeringHours(user))
-      .volunteeringHoursList[0];
-    const activityHours = (await getVolunteerActivityHours(requestID))
-      .volunteerActivityHoursList[0];
-    const approvedVolunteeringHours = {
-      email: activityHours.email,
-      name: activityHours.name,
-      scholarshipID: activityHours.scholarshipID,
-      approvedHours: volunteeringHours.approvedHours + activityHours.hours,
-    };
+    console.log(requestID, email, scholarshipID, decision, user);
+    if (decision === "approved") {
+      const volunteeringHours = (
+        await getVolunteeringHours(scholarshipID, email, user)
+      )?.volunteeringHoursList?.at(0);
+      console.log("volunteer hours", volunteeringHours);
+      const activityHours = (
+        await getVolunteerActivityHours(requestID)
+      ).volunteerActivityHoursList?.at(0);
+      console.log("activity hours", activityHours);
+      if (!activityHours) throw new Error("Volunteering Hours not found");
+      const approvedVolunteeringHours = {
+        email: activityHours?.email,
+        name: activityHours?.name,
+        scholarshipID: activityHours?.scholarshipID,
+        approvedHours:
+          (+volunteeringHours?.approvedHours ?? 0) + +activityHours?.noOfHours,
+      };
 
-    await setDoc(
-      doc(
-        db,
-        VOLUNTEERING_HOURS_COLLECTION,
-        `${approvedVolunteeringHours.scholarshipID}}`
-      ),
-      volunteeringHours
-    );
+      await setDoc(
+        doc(
+          db,
+          VOLUNTEERING_HOURS_COLLECTION,
+          `${approvedVolunteeringHours.scholarshipID}`
+        ),
+        approvedVolunteeringHours
+      );
+    }
 
     // delete from volunteering_hours_list
     await deleteDoc(doc(db, VOLUNTEER_HOURS_LIST_COLLECTION, `${requestID}`));
 
     return {
       status: "success",
-      message: `Volunteering Hours "approved" successfully`,
+      message: `Volunteering Hours ${decision} successfully`,
     };
   } catch (error) {
     logger.error("Error listing collections: ", error);
@@ -467,19 +479,29 @@ export async function approveVolunteeringHours(
 }
 
 // get Volunteering Hours by user
-export async function getVolunteeringHours(email: any) {
+export async function getVolunteeringHours(
+  scholarshipID: string,
+  email: string,
+  user: UserSchema
+) {
   try {
-    const scholarship_forms = await getScholarshipFormData(
-      {
-        field: "email",
-        keyword: user.email.trim() as string,
-        year: "",
-        status: "",
-      },
-      user
-    );
-    const scholarshipID =
-      scholarship_forms.scholarshipFormData[0].scholarshipID;
+    console.log(scholarshipID, email, user);
+    const scholarship_forms = (
+      await getScholarshipFormData(
+        {
+          field: "scholarshipID",
+          keyword: scholarshipID.trim(),
+          year: new Date().getFullYear().toString(),
+          status: "",
+        },
+        user
+      )
+    ).scholarshipFormData;
+    console.log(scholarship_forms?.at(0));
+    if (scholarship_forms?.length === 0)
+      throw new Error("Scholarship form not found");
+    if (scholarship_forms?.at(0).scholarshipID !== scholarshipID)
+      throw new Error("Scholarship ID not matched");
     const _query = query(
       collection(db, VOLUNTEERING_HOURS_COLLECTION),
       where("scholarshipID", "==", scholarshipID)
@@ -488,10 +510,55 @@ export async function getVolunteeringHours(email: any) {
     const volunteeringHoursList = volunteeringHoursSnapshot.docs.map((doc) =>
       doc.data()
     );
+    console.log(volunteeringHoursList);
     return {
       volunteeringHoursList: volunteeringHoursList,
       status: "success",
       message: "Volunteering Hours fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
+  }
+}
+
+// get all Volunteering Activity by user
+export async function getAllVolunteeringActivityHoursByUser(
+  scholarshipID: string,
+  email: string,
+  user: UserSchema
+) {
+  try {
+    const scholarship_forms = (
+      await getScholarshipFormData(
+        {
+          field: "email",
+          keyword: email.trim() as string,
+          year: new Date().getFullYear().toString(),
+          status: "",
+        },
+        user
+      )
+    ).scholarshipFormData;
+    if (scholarship_forms?.length === 0)
+      throw new Error("Scholarship form not found");
+    if (scholarship_forms?.at(0).scholarshipID !== scholarshipID)
+      throw new Error("Scholarship ID not matched");
+    const _query = query(
+      collection(db, VOLUNTEER_HOURS_LIST_COLLECTION),
+      where("scholarshipID", "==", scholarshipID)
+    );
+    const activityHoursSnapshot = await getDocs(_query);
+    const activityHoursList = activityHoursSnapshot.docs.map((doc) =>
+      doc.data()
+    );
+    return {
+      activityHoursList: activityHoursList,
+      status: "success",
+      message: "Volunteering Activity Hours fetched successfully",
     };
   } catch (error) {
     logger.error("Error listing collections: ", error);
@@ -528,9 +595,14 @@ export async function getVolunteerActivityHours(requestID: string) {
 }
 
 // get all Volunteer Activity Hours
-export async function getAllVolunteerActivityHours() {
+export async function getAllVolunteerActivityHours(setLimit: number) {
   try {
-    const _query = query(collection(db, VOLUNTEER_HOURS_LIST_COLLECTION));
+    console.log(setLimit);
+    const _query = query(
+      collection(db, VOLUNTEER_HOURS_LIST_COLLECTION),
+      orderBy("submissionDate", "desc"),
+      limit(setLimit)
+    );
     const volunteerActivityHoursSnapshot = await getDocs(_query);
     const volunteerActivityHoursList = volunteerActivityHoursSnapshot.docs.map(
       (doc) => doc.data()
@@ -548,8 +620,8 @@ export async function getAllVolunteerActivityHours() {
     };
   }
 }
-//aggreagate service
 
+//aggreagate service
 export async function getCountOfScholarShipData(year: string, status: string) {
   console.log(year, "hello");
   const queryList: QueryConstraint[] = [];
@@ -571,4 +643,43 @@ export async function getCountOfScholarShipData(year: string, status: string) {
     year: year,
     count: snapshot.data().count,
   };
+}
+
+// get Volunteer Hours by scholarshipID List
+export async function getVolunteerHoursByScholarshipIDList(
+  scholarshipIDList: string[],
+  user: UserSchema
+) {
+  try {
+    if (!scholarshipIDList || scholarshipIDList.length === 0)
+      throw new Error("Scholarship ID List is required");
+    if (!user) throw new Error("User is required");
+    if (!user.role) throw new Error("User role is required");
+    if (
+      ![RoleType.ADMIN, RoleType.PROGRAM_MANAGER].includes(
+        user.role as RoleType
+      )
+    )
+      throw new Error("User is not authorized to perform this action");
+    console.log("DEBUG 0", scholarshipIDList);
+    const _query = query(
+      collection(db, VOLUNTEERING_HOURS_COLLECTION),
+      where("scholarshipID", "in", scholarshipIDList)
+    );
+    const volunteerHoursSnapshot = await getDocs(_query);
+    const volunteerHoursList = volunteerHoursSnapshot.docs.map((doc) =>
+      doc.data()
+    );
+    return {
+      volunteerHoursList: volunteerHoursList,
+      status: "success",
+      message: "Volunteer Hours fetched successfully",
+    };
+  } catch (error) {
+    logger.error("Error listing collections: ", error);
+    return {
+      status: "failed",
+      message: error,
+    };
+  }
 }

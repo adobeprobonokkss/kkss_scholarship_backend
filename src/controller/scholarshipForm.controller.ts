@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import {
-  approveVolunteeringHours,
+  approveOrRejectVolunteeringHours,
   checkIfScholarshipIDExists,
   getAllScholarshipFormData,
   getScholarshipFormData,
@@ -9,6 +9,11 @@ import {
   submitVolunteeringHours,
   updateScholarshipFormData,
   getCountOfScholarShipData,
+  getAllVolunteeringActivityHoursByUser,
+  getVolunteerActivityHours,
+  getAllVolunteerActivityHours,
+  getVolunteerHoursByScholarshipIDList,
+  UserSchema,
 } from "../service/firebase.service";
 import { RoleType } from "./../utils/types";
 
@@ -26,7 +31,7 @@ export async function submitApplicationHandler(req: Request, res: Response) {
 }
 
 export async function getScholarshipFormDataHandler(
-  req: Request & { user: any },
+  req: Request & { user?: any },
   res: Response
 ) {
   const response = await getScholarshipFormData(req.body, req.user.decoded);
@@ -39,7 +44,7 @@ export async function getAllScholarshipFormDataHandler(
   req: Request,
   res: Response
 ) {
-  const response = await getAllScholarshipFormData();
+  const response = await getAllScholarshipFormData(req.body.limit);
   return res.status(200).json(response);
 }
 
@@ -54,7 +59,7 @@ export async function reviewApplicationHandler(req: Request, res: Response) {
 
 // submit Volunteering hours
 export async function submitVolunteeringHoursHandler(
-  req: Request & { user: any },
+  req: Request & { user?: any },
   res: Response
 ) {
   const response = await submitVolunteeringHours(
@@ -66,21 +71,58 @@ export async function submitVolunteeringHoursHandler(
 
 // get Volunteering hours
 export async function getVolunteeringHoursHandler(
-  req: Request & { user: any },
+  req: Request & { user?: any },
   res: Response
 ) {
-  const response = await getVolunteeringHours(req.user.decoded);
+  const response = await getVolunteeringHours(
+    req.body.scholarshipID,
+    req.body.email,
+    req.user.decoded
+  );
+  return res.status(200).json(response);
+}
+
+// get all Volunteering Activity by user
+export async function getAllVolunteeringActivityHoursByUserHandler(
+  req: Request & { user?: any },
+  res: Response
+) {
+  const response = await getAllVolunteeringActivityHoursByUser(
+    req.body.scholarshipID,
+    req.body.email,
+    req.user.decoded
+  );
+  return res.status(200).json(response);
+}
+
+// get Volunteer Activity Hours by requestID
+export async function getVolunteerActivityHoursByRequestIDHandler(
+  req: Request & { user?: any },
+  res: Response
+) {
+  const response = await getVolunteerActivityHours(req.body.requestID);
+  return res.status(200).json(response);
+}
+
+// get all Volunteer Activity Hours
+export async function getAllVolunteerActivityHoursHandler(
+  req: Request & { user?: any },
+  res: Response
+) {
+  const response = await getAllVolunteerActivityHours(req.body.limit);
   return res.status(200).json(response);
 }
 
 // approve Volunteering hours
-export async function approveVolunteeringHoursHandler(
-  req: Request & { user: any },
+export async function approveOrRejectVolunteeringHoursHandler(
+  req: Request & { user?: any },
   res: Response
 ) {
-  const response = await approveVolunteeringHours(
+  const response = await approveOrRejectVolunteeringHours(
     req.body.requestID,
-    req.body.,
+    req.body.email,
+    req.body.scholarshipID,
+    req.body.decision,
     req.user.decoded
   );
   return res.status(200).json(response);
@@ -93,5 +135,21 @@ export async function getTotalCountHandler(req: any, res: Response) {
   const status = req.body.status;
   console.log(year, status);
   const response = await getCountOfScholarShipData(year, status);
+  return res.status(200).json(response);
+}
+
+// get Volunteer Hours by scholarshipID List
+export async function getVolunteerHoursByScholarshipIDListHandler(
+  req: Request & {
+    user?: {
+      decoded: UserSchema;
+    };
+  },
+  res: Response
+) {
+  const response = await getVolunteerHoursByScholarshipIDList(
+    req.body.scholarshipIDList,
+    req.user.decoded
+  );
   return res.status(200).json(response);
 }
