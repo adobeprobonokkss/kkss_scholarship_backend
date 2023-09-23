@@ -21,6 +21,7 @@ import {
 } from "./controller/scholarshipForm.controller";
 
 function routes(app: Express) {
+  // app.get("/api/v1/", requiredUser);
   app.get("/healthcheck", (req: Request, res: Response) =>
     res.status(200).json({ 1: "tester" })
   );
@@ -80,7 +81,11 @@ function routes(app: Express) {
     promoteUserRole
   );
 
-  app.post("/api/v1/protected/getCountHandler", getTotalCountHandler);
+  app.post(
+    "/api/v1/protected/getCountHandler",
+    [requiredUser, isUserAuthorized],
+    getTotalCountHandler
+  );
 }
 
 export default routes;
