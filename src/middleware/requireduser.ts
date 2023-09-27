@@ -39,7 +39,6 @@ export async function requiredUser(
     } else req.user = userSessionInfo;
     next();
   } catch (error) {
-    console.log(error);
     logger.error("Encoutered error in requiredUser MiddleWare", error);
     res.clearCookie("accessToken");
     return res.redirect(config.get("FRONT_END_URL"));

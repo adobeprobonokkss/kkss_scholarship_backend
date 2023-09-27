@@ -130,10 +130,10 @@ export async function approveOrRejectVolunteeringHoursHandler(
 
 export async function getTotalCountHandler(req: any, res: Response) {
   // return res.status(200).json({});
-  console.log(req.body.year);
+
   const year = req.body.year;
   const status = req.body.status;
-  console.log(year, status);
+
   const response = await getCountOfScholarShipData(year, status);
   return res.status(200).json(response);
 }
