@@ -1,4 +1,5 @@
 import { CookieOptions, Request, Response } from "express";
+import escape from "escape-html";
 import { getGoogleOAuthToken } from "./../service/user.service";
 import { logger } from "./../utils/logger";
 import { signjwt, verifyJwt } from "./../utils/jwt.util";
@@ -109,7 +110,9 @@ export async function createSessionHandler(req: Request, res: Response) {
 }
 
 export async function getGoogleOAuthUrl(req: Request, res: Response) {
-  const receivedState: any = req.query.state;
+  const receivedState: any = escape(req.query.state as string);
+  logger.info("Received State Escape Value - ", receivedState);
+  logger.info("Received State Value - ", req.query.state);
 
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
   const options = {

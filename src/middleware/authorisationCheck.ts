@@ -11,7 +11,7 @@ function isAuthorizedToAceess(current_endpoint: string, role: string) {
   ];
   const only_accessible_to_role_pm = [""];
   const only_accessible_to_rol_vol = [""];
-  console.log(RoleType.ADMIN);
+
   if (role === RoleType.ADMIN) {
     return true;
   } else if (role === RoleType.PROGRAM_MANAGER) {
@@ -41,7 +41,7 @@ export function isUserAuthorized(req: any, res: Response, next: NextFunction) {
       req.user.decoded.role
     );
     req.isUserAuthorized = isUserAuthorized;
-    console.log(`user ${req.user} is  authorised :`, req.isUserAuthorized);
+
     if (req.isUserAuthorized) next();
     else return res.status(401).json({ msg: "USER_IS_NOT_AUTHORIZED" });
   } catch (error) {

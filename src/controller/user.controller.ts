@@ -7,7 +7,7 @@ export function authHandler(req: any, res: Response) {
 
 export async function getAllUsersHandler(req: any, res: Response) {
   const { keyName, partialText } = req.body;
-  console.log(keyName, partialText);
+
   const users = await getAllUsers(keyName, partialText);
   return res.status(200).json(users);
 }
