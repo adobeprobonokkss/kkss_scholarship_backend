@@ -1,6 +1,10 @@
 import config from "config";
 import axios from "axios";
 import QueryString from "qs";
+import {
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+} from "../controller/session.controller";
 
 interface GoogleTokentResults {
   access_token: string;
@@ -19,8 +23,8 @@ export async function getGoogleOAuthToken({
 
   const values = {
     code,
-    client_id: config.get("GOOGLE_CLIENT_ID"),
-    client_secret: config.get("GOOGLE_CLIENT_SECRET"),
+    client_id: GOOGLE_CLIENT_ID,
+    client_secret: GOOGLE_CLIENT_SECRET,
     redirect_uri: config.get("GOOGLE_REDIRECT_URL"),
     grant_type: "authorization_code",
   };

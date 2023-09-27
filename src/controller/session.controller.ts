@@ -7,8 +7,8 @@ import config, { util } from "config";
 import jwt from "jsonwebtoken";
 import { getUserByEmailId, createNewUser } from "./../service/firebase.service";
 
-const GOOGLE_CLIENT_ID = config.get("GOOGLE_CLIENT_ID");
-const GOOGLE_CLIENT_SECRET = config.get("GOOGLE_CLIENT_SECRET");
+export const GOOGLE_CLIENT_ID: string = process.env.GOOGLE_CLIENT_ID;
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URL = config.get("GOOGLE_REDIRECT_URL");
 
 const succesLoginUrl = `${config.get("FRONT_END_URL")}`;
@@ -117,7 +117,7 @@ export async function getGoogleOAuthUrl(req: Request, res: Response) {
   const rootUrl = "https://accounts.google.com/o/oauth2/v2/auth";
   const options = {
     redirect_uri: GOOGLE_REDIRECT_URL as string,
-    client_id: GOOGLE_CLIENT_ID as string,
+    client_id: GOOGLE_CLIENT_ID,
     access_type: "offline",
     response_type: "code",
     prompt: "consent",

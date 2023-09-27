@@ -1,7 +1,7 @@
 import config from "config";
 import jwt, { JwtPayload } from "jsonwebtoken";
-const pirvateKey = config.get<string>("privateKey");
-const publicKey = config.get<string>("publicKey");
+const pirvateKey = process.env.publicKey;
+const publicKey = process.env.publicKey;
 import { logger } from "./logger";
 
 interface user {
@@ -21,7 +21,7 @@ function mapJwtPayloadToCustomUser(payload: user): userSession {
   return {
     valid: true,
     expired: false,
-    decoded: payload
+    decoded: payload,
   };
 }
 
@@ -44,7 +44,7 @@ export function verifyJwt(token: string): userSession {
     return {
       valid: false,
       expired: isexpired,
-      decoded: null
+      decoded: null,
     };
   }
 }
