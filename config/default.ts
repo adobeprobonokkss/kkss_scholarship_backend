@@ -1,4 +1,4 @@
-const environment: string = "production";
+const environment: string = "development";
 const LOCAL_BACKEND_URL = "http://localhost:1337";
 const PROD_BACKEND_URL =
   "https://asia-south1-kkss-5a230.cloudfunctions.net/kkssCloudFunctions";
