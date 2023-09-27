@@ -26,9 +26,20 @@ import {
   getVolunteerActivityHoursByRequestIDHandler,
   getVolunteerHoursByScholarshipIDListHandler,
 } from "./controller/scholarshipForm.controller";
+import RateLimit from "express-rate-limit";
 
 function routes(app: Express) {
   // app.get("/api/v1/", requiredUser);
+  var limiter = RateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    standardHeaders: "draft-7", // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  });
+
+  //  apply to all requests
+  app.use(limiter);
+
   app.get("/healthcheck", (req: Request, res: Response) =>
     res.status(200).json({ 1: "tester" })
   );
