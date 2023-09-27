@@ -89,7 +89,7 @@ export async function getAllUsers(key: string, partialText: string) {
       endAt(partialText + "\uf8ff")
     );
     // const snapshot = await getCountFromServer(_query);
-    // console.log("total number of users-", snapshot.data().count);
+    //
     const filteredObject = await getDocs(_query);
     const filteredList = filteredObject.docs.map((doc) => doc.data());
     return filteredList;
@@ -184,7 +184,6 @@ async function getScholarshipDocuments(
   status: string,
   setLimit: number = 50
 ): Promise<any[]> {
-  console.log("limitCheck", collectionName, field, keyword, year, status);
   const queryList: QueryConstraint[] = [];
   const keywordSearchQuery: QueryConstraint[] = [];
   if (year) {
@@ -334,7 +333,6 @@ export async function updateScholarshipFormData(
 // get all scholarship form data
 export async function getAllScholarshipFormData(setLimit: number) {
   try {
-    console.log("limitCheck", setLimit);
     const _query = query(
       collection(db, SCHOLARSHIP_FORMS_COLLECTION),
       limit(setLimit)
@@ -367,10 +365,8 @@ export async function updateUserData(email: string, updatedRole: string) {
       querySnapshot.forEach(async (queryDocSnapshot) => {
         const docRef = doc(usersCollection, queryDocSnapshot.id);
         await updateDoc(docRef, { email: email, role: updatedRole });
-        console.log("Document updated:", queryDocSnapshot.id);
       });
     } else {
-      console.log("No users found with the specified email.");
     }
   } catch (error) {
     console.error("Error updating documents:", error);
@@ -383,7 +379,6 @@ export async function submitVolunteeringHours(
   user: any
 ) {
   try {
-    console.log("DEBUG 0", volunteeringDetails, user);
     const submissionDate = formatDate(new Date());
     volunteeringDetails.scholarshipID = volunteeringDetails.scholarshipID;
     volunteeringDetails.submissionDate = submissionDate;
@@ -433,16 +428,15 @@ export async function approveOrRejectVolunteeringHours(
   user: any
 ) {
   try {
-    console.log(requestID, email, scholarshipID, decision, user);
     if (decision === "approved") {
       const volunteeringHours = (
         await getVolunteeringHours(scholarshipID, email, user)
       )?.volunteeringHoursList?.at(0);
-      console.log("volunteer hours", volunteeringHours);
+
       const activityHours = (
         await getVolunteerActivityHours(requestID)
       ).volunteerActivityHoursList?.at(0);
-      console.log("activity hours", activityHours);
+
       if (!activityHours) throw new Error("Volunteering Hours not found");
       const approvedVolunteeringHours = {
         email: activityHours?.email,
@@ -485,7 +479,6 @@ export async function getVolunteeringHours(
   user: UserSchema
 ) {
   try {
-    console.log(scholarshipID, email, user);
     const scholarship_forms = (
       await getScholarshipFormData(
         {
@@ -497,7 +490,7 @@ export async function getVolunteeringHours(
         user
       )
     ).scholarshipFormData;
-    console.log(scholarship_forms?.at(0));
+
     if (scholarship_forms?.length === 0)
       throw new Error("Scholarship form not found");
     if (scholarship_forms?.at(0).scholarshipID !== scholarshipID)
@@ -510,7 +503,7 @@ export async function getVolunteeringHours(
     const volunteeringHoursList = volunteeringHoursSnapshot.docs.map((doc) =>
       doc.data()
     );
-    console.log(volunteeringHoursList);
+
     return {
       volunteeringHoursList: volunteeringHoursList,
       status: "success",
@@ -597,7 +590,6 @@ export async function getVolunteerActivityHours(requestID: string) {
 // get all Volunteer Activity Hours
 export async function getAllVolunteerActivityHours(setLimit: number) {
   try {
-    console.log(setLimit);
     const _query = query(
       collection(db, VOLUNTEER_HOURS_LIST_COLLECTION),
       orderBy("submissionDate", "desc"),
@@ -623,7 +615,6 @@ export async function getAllVolunteerActivityHours(setLimit: number) {
 
 //aggreagate service
 export async function getCountOfScholarShipData(year: string, status: string) {
-  console.log(year, "hello");
   const queryList: QueryConstraint[] = [];
   const keywordSearchQuery: QueryConstraint[] = [];
   if (year) {
@@ -661,7 +652,7 @@ export async function getVolunteerHoursByScholarshipIDList(
       )
     )
       throw new Error("User is not authorized to perform this action");
-    console.log("DEBUG 0", scholarshipIDList);
+
     const _query = query(
       collection(db, VOLUNTEERING_HOURS_COLLECTION),
       where("scholarshipID", "in", scholarshipIDList)
