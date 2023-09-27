@@ -14,18 +14,8 @@ export default {
   origin: "*",
   port: 1337,
   dbUri: "",
-  GOOGLE_CLIENT_ID:
-    "578642137246-6algulvf7bam990235ckkk71p5he6lgi.apps.googleusercontent.com",
-  GOOGLE_CLIENT_SECRET: "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",
   GOOGLE_REDIRECT_URL: `${baseBackendURL}/api/sessions/oauth/google`,
   privateKey: `testfdafad`,
-
-  publicKey: `-----BEGIN PUBLIC KEY-----
-  MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCaYm7eUkTgIeTcwD3rFicPa969
-  AOThXBlwKY7qoSjVeeV2jZJ5L+GMTzAsgH24fzW/de4E6oG3JT32oNhVoJCHoeWz
-  NwRpCsw1hKX+pTa2J8Y4KJB87PBsvzpAJ3J/Buyba8ET1B/RZK5l532pXPzYgLYZ
-  WgUdAvVweE/yGPJY1wIDAQAB
-  -----END PUBLIC KEY-----`,
   accessTokenTtl: "60m",
   refreshTokenTtl: "1y",
   FIREBASE_DB_CONFIG: {
