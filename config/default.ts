@@ -6,7 +6,8 @@ const baseBackendURL =
   environment === "development" ? LOCAL_BACKEND_URL : PROD_BACKEND_URL;
 
 const LOCAL_FRONTEND_URL = "http://localhost:9000";
-const PROD_FRONTEND_URL = "https://kkss-5a230.web.app";
+// const PROD_FRONTEND_URL = "https://kkss-5a230.web.app";
+const PROD_FRONTEND_URL = "https://abhyudayafoundation.org";
 const baseFrontendURL =
   environment === "development" ? LOCAL_FRONTEND_URL : PROD_FRONTEND_URL;
 
