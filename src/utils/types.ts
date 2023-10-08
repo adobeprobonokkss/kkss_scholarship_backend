@@ -40,7 +40,6 @@ export type ScholarshipData = {
   hobbies: string;
   ambition: string;
   awardDetails: string;
-  attendanceDetails: string;
   fatherName: string;
   fatherAge: string;
   fatherOccupation: string;
@@ -56,8 +55,6 @@ export type ScholarshipData = {
   siblingOccupation: string;
   siblingAnnualIncome: string;
   siblingPhNumber: string;
-  formSubmittedBy: string;
-  yourPhNumber: string;
   scholarshipID?: string;
   status?: string;
   submissionYear?: string;
