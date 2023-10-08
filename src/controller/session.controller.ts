@@ -42,7 +42,7 @@ export async function googleOAuthHandler(req: Request, res: Response) {
     logger.info("Getting User Info From Google ", userInfo);
     if (!userInfo.email_verified) {
       logger.info("Email is not veerified for user..", userInfo.email);
-      return res.status(403).send("Your enamil is not verified...."); //handle error for UI
+      return res.status(403).send("Your email is not verified...."); //handle error for UI
     }
 
     const { name, email, picture } = userInfo;
